@@ -1,0 +1,29 @@
+.my-css label{
+    display: inline !important;
+    margin: 0px 10px !important;
+}
+.ccfic{
+    text-align: center;
+}
+.ccfic span{
+    font-size: 14px;
+    font-family: 'Abel';
+    color: #7b7d81; 
+}
+.ccfic .ccfic-source{
+    color: #149348 !important;
+    border-left: 1px solid;
+    padding-left: 4px;
+}
+
+.ccfic .ccfic-source a{
+    color: #149348 !important; 
+}
+
+.cielo-payment-form input, .cielo-payment-form select{
+    font-size: 1em !important; 
+}
+
+.cart_item .product-name{
+    width: 80% !important;
+}

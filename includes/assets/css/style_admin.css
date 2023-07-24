@@ -1,0 +1,34 @@
+#wpcontent{
+	background-color: #eee !important;
+}
+
+.nav-pills .nav-link{
+	padding: 11px;  
+	background-color: #fafafa;
+	border-right: 1px solid #eee;
+	border-bottom: 1px solid #eee;
+	border-radius: 0;
+	color: #2271b1;
+	height: 39px;
+}
+
+.nav-pills a:focus{
+	box-shadow: none !important;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link{
+	color: #555;
+    background-color: #eee;
+	box-shadow: none !important;
+} 
+
+.wcbcf-address h4{
+	margin-top: 5px !important;
+    font-size: 15px;
+    margin-bottom: 14px !important;
+    color: #555;
+}
+
+#postcustom, #woocommerce-order-downloads, .order_data_column h3, .order_data_column .address{
+	display: none !important;
+}
