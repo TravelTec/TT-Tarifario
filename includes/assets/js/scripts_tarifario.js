@@ -1167,7 +1167,7 @@ function get_payment_method(forma, methodo, id){
     var valores_diarias = parseFloat(jQuery("#valor_soma_dias_select").val())+(parseFloat(taxas)/3);
     var parcelas = 3;
   } 
-  var nome_roteiro = jQuery("#nome_roteiro").val(); 
+  var nome_roteiro = jQuery("#evento_selected").val(); 
   var regime = jQuery("#regime_apto").val(); 
   var periodo = jQuery("#tipo_periodo").val(); 
   var description = jQuery("#description").val(); 

@@ -2317,9 +2317,13 @@ function invenDescSort($a, $b)
         $thumb_url = wp_get_attachment_image_src($thumb_id,'thumbnail-size', true);
         $url = $thumb_url[0];   
 
-        $data = $wpdb->get_results( "SELECT * FROM wp_posts WHERE ID = '$post_id' AND post_status = 'publish'"); 
+        $data = $wpdb->get_results( "SELECT * FROM wp_posts WHERE ID = '$post_id' AND post_status = 'publish'");  
 
         if (!empty($data[0]->post_title)) { 
+
+                $retorno = '';       
+				
+				$retorno .= '<input type="hidden" id="evento_selected" value="'.$data[0]->post_title.'">';
             $slug_roteiro = $data[0]->post_name;
 
             $data = $wpdb->get_results( "SELECT * FROM wp_postmeta WHERE post_id = '$post_id' AND meta_key = 'dados_tarifas'"); 
@@ -2511,11 +2515,9 @@ function invenDescSort($a, $b)
 
                 $blocos = array_values($dados); 
                 
-                usort($blocos, "sort_array_tarifa"); 
+                usort($blocos, "sort_array_tarifa");  
 
-                $retorno = '';      
-
-                $retorno .= '<div class="elementor-section-wrap">';
+                $retorno .= '<div class="elementor-section-wrap">'; 
 
                 $retorno .= '<style> 
                     .input-group{
