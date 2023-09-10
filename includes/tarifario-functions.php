@@ -6,7 +6,7 @@
     */ 
 
         /* REGISTRO TAXONOMIA APARTAMENTOS */ 
-            function tarifarios_create_aptos_taxonomies(){ 
+			function tarifarios_create_aptos_taxonomies(){ 
                 $labels = array(
 
                     'name'              => _x('Apartamentos', 'taxonomy general name', 'booking'),
@@ -344,8 +344,7 @@
                 'font_awesome_admin', 
                 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css'
             ); 
- 
-            wp_enqueue_script( 'jquery-tarifario', "https://code.jquery.com/ui/1.12.1/jquery-ui.js");
+  
             wp_enqueue_script( 'moment-tarifario', plugin_dir_url( __FILE__ ) . 'assets/js/moment.js');
             wp_enqueue_script( 'mask-tarifario', plugin_dir_url( __FILE__ ) . 'assets/js/mask.js'); 
 
@@ -360,6 +359,12 @@
             wp_enqueue_script( 
                 'bootstrap-script',
                 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js',
+                array( 'jquery' )
+            );  
+
+            wp_enqueue_script( 
+                'jquery-ui-script',
+                'https://code.jquery.com/ui/1.12.1/jquery-ui.js',
                 array( 'jquery' )
             ); 
 
@@ -427,11 +432,65 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                 } 
             }
 
-            add_action('hoteis_add_form_fields', 'add_term_localizao_hotel', 1, 1);
-            add_action('created_hoteis', 'save_term_localizao_hotel', 10, 2);
 
-            add_action('hoteis_edit_form_fields', 'edit_localizao_hotel', 1, 2);
-            add_action('edited_hoteis', 'update_localizao_hotel', 10, 2);
+            function add_term_qtd_pax($taxonomy){  
+
+            ?> 
+                <div class="form-field term-qtd-pax-wrap">
+                    <label for="hotel">Qtd. pax</label>
+                    <input type="number" name="QtdPax" min="1" max="4" class="form-control" value="1">
+					<p>Informe a quantidade máxima de pax para o quarto.</p>
+                </div>
+            <?php }
+ 
+            function save_term_qtd_pax($term_id, $tt_id) {
+                if (isset($_POST['QtdPax']) && '' !== $_POST['QtdPax']){
+					$hotel_id = isset($_POST['Hotel']) ? intval($_POST['Hotel']) : 0;
+					$qtd_pax = isset($_POST['QtdPax']) ? intval($_POST['QtdPax']) : 0;
+
+					if ($hotel_id === 0) {
+						// Hotel não selecionado, então exiba uma mensagem de erro
+						wp_die('Erro: Selecione um hotel ao criar uma nova categoria de apto.');
+					}
+					if ($qtd_pax === 0) {
+						// Hotel não selecionado, então exiba uma mensagem de erro
+						wp_die('Erro: Selecione a quantidade correta de pax para o quarto.');
+					}
+					if ($qtd_pax > 4) {
+						// Hotel não selecionado, então exiba uma mensagem de erro
+						wp_die('Erro: A quantidade máxima de pax para o quarto é 4.');
+					}
+					
+                    $group = $_POST['QtdPax'];
+                    add_term_meta($term_id, 'term_qtd_pax', $group, true);
+                } 
+            }
+ 
+            function edit_qtd_pax($term, $taxonomy) {
+                // get current group
+                $term_qtd_pax = get_term_meta($term->term_id, 'term_qtd_pax', true); ?> 
+                <tr class="form-field term-slug-wrap">
+                    <th scope="row">
+                        <label for="slug">Qtd. Pax</label>
+                    </th>
+                    <td>
+                        <input type="number" name="QtdPax" min="1" max="4" value="<?php echo $term_qtd_pax ?>" class="">
+                    </td>
+                </tr>
+            <?php }
+ 
+            function update_qtd_pax($term_id, $tt_id) {
+                if (isset($_POST['QtdPax']) && '' !== $_POST['QtdPax']){
+                    $group = $_POST['QtdPax'];
+                    update_term_meta($term_id, 'term_qtd_pax', $group);
+                } 
+            }
+
+            add_action('aptos_add_form_fields', 'add_term_qtd_pax', 1, 1);
+            add_action('created_aptos', 'save_term_qtd_pax', 10, 2);
+
+            add_action('aptos_edit_form_fields', 'edit_qtd_pax', 1, 2);
+            add_action('edited_aptos', 'update_qtd_pax', 10, 2);
 
             function add_term_localizao_hotel($taxonomy){  
 
@@ -1148,8 +1207,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                     array( 'jquery' )
                 );  
 
-
-                wp_enqueue_script( 'jquery-tarifario', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.2/jquery.min.js');  
+ 
                 wp_enqueue_script( 'moment-tarifario', 'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js');
                 wp_enqueue_script( 'daterangepicker-tarifario', 'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js');
 
@@ -1196,6 +1254,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
             unset( $columns['description'] );
             $columns['imagem'] = 'Imagem';
             $columns['hotel'] = 'Hotel';
+            $columns['qtdpax'] = 'Pax';
             return $columns;
         }
         add_filter( 'manage_edit-aptos_columns', 'add_aptos_columns' );
@@ -1228,6 +1287,9 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                     //do your stuff here with $term or $term_id
                     $content = '<img src="'.$txt_upload_image.'" style="height: 50px">';
                     break;
+				case 'qtdpax':
+					$content = get_term_meta($term->term_id, 'term_qtd_pax', true);
+					break;
                 default:
                     break;
             }
@@ -1639,6 +1701,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
 
         function list_apto_hotel() { 
             $id_hotel = $_POST['valor_hotel']; 
+			$key = $_POST['contador'];
 
             $cat_terms = get_terms(
                 array('aptos'),
@@ -1656,7 +1719,8 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
             } 
 
             $txt_hotel = array_values($txt_hotel);
-
+			$retorno = '';
+			 
             $retorno .= '<option value="0">Selecione um apartamento</option>';
 
             for ($i=0; $i < count($txt_hotel); $i++) { 
@@ -1668,6 +1732,12 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
             echo $retorno;
             
         } 
+
+        add_action( 'wp_ajax_get_data_apto', 'get_data_apto' );
+        add_action( 'wp_ajax_get_data_apto', 'get_data_apto' );
+		function get_data_apto(){
+			echo get_term_meta($_POST['apto_roteiro'], 'term_qtd_pax', true);
+		}
 
         add_action( 'wp_ajax_set_value_nacionais', 'set_value_nacionais' );
         add_action( 'wp_ajax_nopriv_set_value_nacionais', 'set_value_nacionais' );
@@ -1774,6 +1844,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
 
         function list_tarifarios_loop() {
             $id = $_POST['id'];   
+			$tipoPacote = get_post_meta($id, 'pacote', true);
 
             $tarifas = unserialize(get_post_meta( $id, 'dados_tarifario', true)); 
 
@@ -1867,6 +1938,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                         } 
                         if ($id_hotel == $txt_apto[$apt][1]) { 
                             $options_apto[$i][] .= '<option value="'.$txt_apto[$apt][2].'" '.($id_apto == $txt_apto[$apt][2] ? 'selected' : '').'>'.$txt_apto[$apt][0].'</option>';
+							$qtd_pax_apto[$i][] .= get_term_meta($txt_apto[$apt][2], 'term_qtd_pax', true).';'.$txt_apto[$apt][2];
                         }
                     }
 
@@ -1896,8 +1968,8 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                         <div class="row" style="padding-top: 10px"> 
                             <div class="col-12" style="padding: 0px 10px;"> 
                                 <h4 style="color: #888;border-bottom: ridge;padding-bottom: 6px;">
-                                    <a onclick="exibe_div_tarifario(\''.$contador.'\')" style="cursor:pointer;">'.ucfirst((str_replace("+", " ", str_replace("-", " ", $nome_tarifario[$i]["tarifario"]["tarifario_roteiro"])))).' - '.$nome_hotel.' - '.$nome_apto.' - '.$nome_regime.'</a> 
-                                    <a onclick="remove_div_tarifario(\''.$contador.'\')" style="cursor: pointer;"><i class="fas fa-trash-alt" style="float: right;color: #e01717;"></i></a>
+                                    <a onclick="exibe_div_tarifario(\''.$contador.'\')" style="cursor:pointer;"> <i class="fa fa-arrow-down"></i> '.$nome_apto.' - '.$nome_regime.' - '.$nome_hotel.' - '.ucfirst((str_replace("+", " ", str_replace("-", " ", $nome_tarifario[$i]["tarifario"]["tarifario_roteiro"])))).'</a> 
+                                    <a onclick="remove_div_tarifario(\''.$contador.'\')" style="cursor: pointer;"><i class="fas fa-trash-alt" style="float: right;color: #e01717;"></i></a> <a onclick="exibe_div_tarifario(\''.$contador.'\')" style="float:right;margin-right: 6px;cursor:pointer">Editar | </a>
                                 </h4> 
                             </div>
                         </div> 
@@ -1950,11 +2022,15 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                                         <span style="color:#555">Apartamento</span>
                                     </label> 
                                 </div>
-                                <div class="col-4"> 
-                                    <select name="apto_roteiro'.$contador.'" id="apto_roteiro'.$contador.'" class="cx-ui-select"> 
-                                        <option value="">Selecione um apartamento...</option>';
-
-                                        for ($countApto=0; $countApto < count($options_apto[$i]); $countApto++) { 
+                                <div class="col-4">';
+									for ($countApto=0; $countApto < count($options_apto[$i]); $countApto++) { 
+											$dataApto = explode(";", $qtd_pax_apto[$i][$countApto]);
+											$retorno .= '<input type="hidden" value="'.$dataApto[0].'" id="qtd_pax_'.$dataApto[1].'">'; 
+										$retorno .= '<input type="hidden" value="'.$dataApto[1].'" id="room_'.$dataApto[1].'">'; 
+                                        }
+                                    $retorno .= '<select name="apto_roteiro'.$contador.'" id="apto_roteiro'.$contador.'" class="cx-ui-select" onchange="select_apto_roteiro('.$contador.')"> 
+                                        <option value="">Selecione um apartamento...</option>'; 
+                                        for ($countApto=0; $countApto < count($options_apto[$i]); $countApto++) {  
                                             $retorno .= ''.$options_apto[$i][$countApto];
                                         }
                                     $retorno .= '
@@ -1964,7 +2040,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                                     </div>
                                 </div>
                             </div> 
-                            <div class="row divdiarias" style="padding: 10px 0px;">  
+                            <div class="row divdiarias" style="padding: 10px 0px;'.($tipoPacote == 0 ? 'display:none' : '').'">  
                                 <div class="col-2" style="padding:10px">Distância</div>     
                                 <div class="col-4"> 
                                     <input type="text" class="cx-ui-text" id="distancia'.$contador.'" name="distancia'.$contador.'" value="'.$nome_tarifario[$i]["tarifario"]["distancia"].'" style="font-size: 13px;width:100%;"> 
@@ -1978,7 +2054,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                                         ["consulta"] == 1 ? 'checked' : '').'> Sob Consulta
                                 </div>
                               </div> 
-                            <div class="row divdiarias" style="padding-top: 10px;">  
+                            <div class="row divdiarias" style="padding-top: 10px;'.($tipoPacote == 0 ? 'display:none' : '').'">  
                                 <div class="col-2" style="padding:10px">Min. Diárias</div>     
                                 <div class="col-2"> 
                                     <input type="number" class="cx-ui-text" id="min_diarias'.$contador.'" name="min_diarias'.$contador.'" value="'.$nome_tarifario[$i]["tarifario"]["min_diarias"].'" style="font-size: 13px;width:100%;"> 
@@ -2006,7 +2082,7 @@ add_filter( 'admin_post_thumbnail_html', 'filter_featured_image_admin_text', 10,
                                     <input type="text" class="cx-ui-text money" id="valor_pacote_triple'.$contador.'" name="valor_pacote_triple'.$contador.'"  style="font-size: 13px;width:100%" autocomplete="off" placeholder="0,00" value="'.($nome_tarifario[$i]["tarifario"]["valor_pacote_triple"]).'"> 
                                 </div>  
                             </div>
-                            <div class="row divdiarias" style="padding-top: 20px;"> 
+                            <div class="row divdiarias" style="padding-top: 20px;'.($tipoPacote == 0 ? 'display:none' : '').'"> 
                                 <div class="col-2 col_valor_padrao'.$contador.'" style="padding:10px">
                                     <input type="checkbox" name="check_valor_padrao'.$contador.'" id="check_valor_padrao'.$contador.'" onchange="toggle_field_valor_padrao(\''.$contador.'\')" '.($nome_tarifario[$i]["tarifario"]
                                         ["check_valor_padrao"] == 1 ? 'checked' : '').'> Valor padrão
@@ -2181,14 +2257,15 @@ function invenDescSort($a, $b)
 
             $retorno = '';
             if (count($nome_tarifario) > 0) { 
+				$retorno .= '<input type="hidden" id="typePeriod" value="'.get_post_meta( $id, 'pacote', true).'">';
                 $contador = 0;
                 for ($i=0; $i < count($nome_tarifario); $i++) { 
 
                     $contador = $contador+1;
 
-                    $retorno .= '<div class="row repeater_tarifario" id="holder_remover_tarifario'.$contador.'" style="padding: 11px 10px;"><a onclick="show_dados_tarif(\''.$contador.'\')" style="cursor:pointer;"><h4 style="color: #888;border-bottom: ridge;padding-bottom: 6px;width: 100%;margin-bottom: 12px;">'.$nome_tarifario[$i]["nome"].' - '.$nome_tarifario[$i]["data_inicial"].' a '.$nome_tarifario[$i]["data_final"].' - '.($nome_tarifario[$i]["tipo"] == 0 ? 'Cotação' : 'Reserva').'</a> <a onclick="remove_div_tarifario_tarifa(\''.$contador.'\')" style="cursor: pointer;"><i class="fas fa-trash-alt" style="float: right;color: #e01717;"></i></a></h4> <div class="div_dados_tarifario_nome'.$contador.'" data-control-name="nome_tarifario" style="width: 46%;margin-right: 4%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Nome</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="nome_tarifario" class="widefat cx-ui-text" name="nome_tarifario'.$contador.'" value="'.$nome_tarifario[$i]["nome"].'" placeholder="" autocomplete="off"></div></div></div><div class="div_dados_tarifariotipo'.$contador.'" style="width: 50%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Tipo</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container " style="padding-top:6px"><div class="cx-radio-group"><div class="cx-radio-item"><input type="radio" class="cx-radio-input" id="tipo_tarifario-'.$contador.'a" name="tipo_tarifario'.$contador.'" value="0" '.($nome_tarifario[$i]["tipo"] == 0 ? 'checked' : '').'><label style="margin-right:4%" for="tipo_tarifario-'.$contador.'a"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Cotação</span></label> <input type="radio" class="cx-radio-input" id="tipo_tarifario-'.$contador.'b" name="tipo_tarifario'.$contador.'" value="1" '.($nome_tarifario[$i]["tipo"] == 1 ? 'checked' : '').'><label for="tipo_tarifario-'.$contador.'b"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Reserva</span></label> </div><div class="clear"></div></div></div></div></div><div class="div_dados_tarifariomoeda'.$contador.'" data-control-name="moeda" style="width: 25%;margin-right: 4%;display:none"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Moeda</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><div class="cx-ui-select-wrapper"><select id="moeda" class="cx-ui-select" name="moeda'.$contador.'" size="1" data-filter="false" data-placeholder="" style="width: 100%"> <option value="" '.($nome_tarifario[$i]["moeda"] == '' ? 'selected' : '').'>Selecione...</option> <option value="R$" '.($nome_tarifario[$i]["moeda"] == 'R$' ? 'selected' : '').'>R$ - Real</option><option value="AU$" '.($nome_tarifario[$i]["moeda"] == 'AU$' ? 'selected' : '').'>AU$ - Dólar australiano</option><option value="GBP" '.($nome_tarifario[$i]["moeda"] == 'GBP' ? 'selected' : '').'>GBP - Libra esterlina</option><option value="$" '.($nome_tarifario[$i]["moeda"] == '$' ? 'selected' : '').'>$ - Dólar canadense</option><option value="USD" '.($nome_tarifario[$i]["moeda"] == 'USD' ? 'selected' : '').'>USD - Dólar americano</option><option value="EUR" '.($nome_tarifario[$i]["moeda"] == 'EUR' ? 'selected' : '').'>EUR - Euro</option></select></div></div></div></div><div class="div_dados_tarifario_dataini'.$contador.'" data-control-name="data_inicial" style="margin-right: 4%;width: 30%;display:none"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Data Inicial</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="data_inicial'.$contador.'" class="widefat cx-ui-text" name="data_inicial'.$contador.'" value="'.$nome_tarifario[$i]["data_inicial"].'" placeholder="" autocomplete="off"></div></div></div><div class="div_dados_tarifario_datafim'.$contador.'" data-control-name="data_final" style="width: 30%;display:none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Data final</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="data_final'.$contador.'}" class="widefat cx-ui-text" name="data_final'.$contador.'" value="'.$nome_tarifario[$i]["data_final"].'" placeholder="" autocomplete="off"></div></div></div> 
+                    $retorno .= '<div class="row repeater_tarifario" id="holder_remover_tarifario'.$contador.'" style="padding: 11px 10px;"><a onclick="show_dados_tarif(\''.$contador.'\')" style="cursor:pointer;"><h4 style="color: #888;border-bottom: ridge;padding-bottom: 6px;width: 100%;margin-bottom: 12px;"><i class="fa fa-arrow-down"></i> '.$nome_tarifario[$i]["nome"].' - '.$nome_tarifario[$i]["data_inicial"].' a '.$nome_tarifario[$i]["data_final"].' - '.($nome_tarifario[$i]["tipo"] == 0 ? 'Cotação' : 'Reserva').'</a> <a onclick="remove_div_tarifario_tarifa(\''.$contador.'\')" style="cursor: pointer;"><i class="fas fa-trash-alt" style="float: right;color: #e01717;"></i></a> <a style="float:right;margin-right: 6px;cursor:pointer" onclick="show_dados_tarif(\''.$contador.'\')">Editar | </a> </h4> <div class="div_dados_tarifario_nome'.$contador.'" data-control-name="nome_tarifario" style="width: 46%;margin-right: 4%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Nome</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="nome_tarifario" class="widefat cx-ui-text" name="nome_tarifario'.$contador.'" value="'.$nome_tarifario[$i]["nome"].'" placeholder="" autocomplete="off"></div></div></div><div class="div_dados_tarifariotipo'.$contador.'" style="width: 50%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Tipo</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container " style="padding-top:6px"><div class="cx-radio-group"><div class="cx-radio-item"><input type="radio" class="cx-radio-input" id="tipo_tarifario-'.$contador.'a" name="tipo_tarifario'.$contador.'" value="0" '.($nome_tarifario[$i]["tipo"] == 0 ? 'checked' : '').'><label style="margin-right:4%" for="tipo_tarifario-'.$contador.'a"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Cotação</span></label> <input type="radio" class="cx-radio-input" id="tipo_tarifario-'.$contador.'b" name="tipo_tarifario'.$contador.'" value="1" '.($nome_tarifario[$i]["tipo"] == 1 ? 'checked' : '').'><label for="tipo_tarifario-'.$contador.'b"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Reserva</span></label> </div><div class="clear"></div></div></div></div></div><div class="div_dados_tarifariomoeda'.$contador.'" data-control-name="moeda" style="width: 25%;margin-right: 4%;display:none"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Moeda</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><div class="cx-ui-select-wrapper"><select id="moeda" class="cx-ui-select" name="moeda'.$contador.'" size="1" data-filter="false" data-placeholder="" style="width: 100%"> <option value="" '.($nome_tarifario[$i]["moeda"] == '' ? 'selected' : '').'>Selecione...</option> <option value="R$" '.($nome_tarifario[$i]["moeda"] == 'R$' ? 'selected' : '').'>R$ - Real</option><option value="AU$" '.($nome_tarifario[$i]["moeda"] == 'AU$' ? 'selected' : '').'>AU$ - Dólar australiano</option><option value="GBP" '.($nome_tarifario[$i]["moeda"] == 'GBP' ? 'selected' : '').'>GBP - Libra esterlina</option><option value="$" '.($nome_tarifario[$i]["moeda"] == '$' ? 'selected' : '').'>$ - Dólar canadense</option><option value="USD" '.($nome_tarifario[$i]["moeda"] == 'USD' ? 'selected' : '').'>USD - Dólar americano</option><option value="EUR" '.($nome_tarifario[$i]["moeda"] == 'EUR' ? 'selected' : '').'>EUR - Euro</option></select></div></div></div></div><div class="div_dados_tarifario_dataini'.$contador.'" data-control-name="data_inicial" style="margin-right: 4%;width: 30%;display:none"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Data Inicial</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="data_inicial'.$contador.'" class="widefat cx-ui-text" name="data_inicial'.$contador.'" value="'.$nome_tarifario[$i]["data_inicial"].'" placeholder="" autocomplete="off"></div></div></div><div class="div_dados_tarifario_datafim'.$contador.'" data-control-name="data_final" style="width: 30%;display:none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner">Data final</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container "><input type="text" id="data_final'.$contador.'" class="widefat cx-ui-text" name="data_final'.$contador.'" value="'.$nome_tarifario[$i]["data_final"].'" placeholder="" autocomplete="off"></div></div></div> 
 
-                        <div class="div_dados_tarifariotipo'.$contador.'" style="width: 50%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Tipo do período</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container " style="padding-top:6px"><div class="cx-radio-group"><div class="cx-radio-item"><input type="radio" class="cx-radio-input" name="tipo_periodo'.$contador.'" id="tipo_periodo-'.$contador.'a" value="0" '.($nome_tarifario[$i]["tipo_periodo"] == 0 ? 'checked' : '').'><label for="tipo_periodo-'.$contador.'a" style="margin-right:4%"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Especial</span></label> <input type="radio" class="cx-radio-input" name="tipo_periodo'.$contador.'" value="1" id="tipo_periodo-'.$contador.'b" '.($nome_tarifario[$i]["tipo_periodo"] == 1 ? 'checked' : '').'><label for="tipo_periodo-'.$contador.'b"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Regular</span></label> </div><div class="clear"></div></div></div></div></div>
+                        <div class="div_dados_tarifariotipo'.$contador.'" style="width: 50%;display: none;"><div class="cx-control__info"><div class="h4-style cx-ui-kit__title cx-control__title" role="banner" style="padding: 15px 0px;">Tipo do período</div></div><div class="cx-ui-kit__content cx-control__content" role="group"><div class="cx-ui-container " style="padding-top:6px"><div class="cx-radio-group"><div class="cx-radio-item"><input type="radio" class="cx-radio-input" name="tipo_periodo'.$contador.'" id="tipo_periodo-'.$contador.'a" value="0" '.($nome_tarifario[$i]["tipo_periodo"] == 0 ? 'checked' : '').' '.(get_post_meta( $id, 'pacote', true) == 0 ? 'disabled' : '').'><label for="tipo_periodo-'.$contador.'a" style="margin-right:4%;'.(get_post_meta( $id, 'pacote', true) == 0 ? 'cursor:not-allowed' : '').'"><span class="cx-lable-content"><span class="cx-radio-item" style="'.(get_post_meta( $id, 'pacote', true) == 0 ? 'cursor:not-allowed' : '').'"><i></i></span>Especial</span></label> <input type="radio" class="cx-radio-input" name="tipo_periodo'.$contador.'" value="1" id="tipo_periodo-'.$contador.'b" '.($nome_tarifario[$i]["tipo_periodo"] == 1 ? 'checked' : '').'><label for="tipo_periodo-'.$contador.'b"><span class="cx-lable-content"><span class="cx-radio-item"><i></i></span>Regular</span></label> </div><div class="clear"></div></div></div></div></div>
 
                          </div>';
 
@@ -2307,6 +2384,7 @@ function invenDescSort($a, $b)
 
     function getUserEmail_func( $atts ) { 
         global $wpdb;  
+		$table = $wpdb->prefix;
 
         $id = $atts['pacote']; 
     $_SESSION['roteiro_id'] = $id;
@@ -2317,24 +2395,25 @@ function invenDescSort($a, $b)
         $thumb_url = wp_get_attachment_image_src($thumb_id,'thumbnail-size', true);
         $url = $thumb_url[0];   
 
-        $data = $wpdb->get_results( "SELECT * FROM wp_posts WHERE ID = '$post_id' AND post_status = 'publish'");  
+        $data = $wpdb->get_results( "SELECT * FROM ".$table."posts WHERE ID = '$post_id' AND post_status = 'publish'");   
 
         if (!empty($data[0]->post_title)) { 
 
-                $retorno = '';       
-				
+                $retorno = '';        
+				$retorno .= '<input type="hidden" id="roteiro_buy" value="'.get_the_title().'">';
 				$retorno .= '<input type="hidden" id="evento_selected" value="'.$data[0]->post_title.'">';
             $slug_roteiro = $data[0]->post_name;
 
-            $data = $wpdb->get_results( "SELECT * FROM wp_postmeta WHERE post_id = '$post_id' AND meta_key = 'dados_tarifas'"); 
+            $data = $wpdb->get_results( "SELECT * FROM ".$table."postmeta WHERE post_id = '$post_id' AND meta_key = 'dados_tarifas'"); 
 
             $tarifario = unserialize(unserialize($data[0]->meta_value)); 
-
             if (!empty($tarifario)) { 
 
-                $data_tarifario = $wpdb->get_results( "SELECT * FROM wp_postmeta WHERE post_id = '$post_id' AND meta_key = 'dados_tarifario'");
+                $data_tarifario = $wpdb->get_results( "SELECT * FROM ".$table."postmeta WHERE post_id = '$post_id' AND meta_key = 'dados_tarifario'");
 
                 $tarifario_valores  = unserialize(unserialize($data_tarifario[0]->meta_value));     
+				
+				$tipo_diarias = get_post_meta( $id, 'pacote', true); 
 
                 $cat_terms_idade = get_terms(
                     array('regra'),
@@ -2355,14 +2434,16 @@ function invenDescSort($a, $b)
 
               $nome_roteiro = get_post_meta( $post_id, 'nome', true);
               $show_titulo = get_post_meta( $post_id, 'exibir-titulo', true);
+              $show_info = get_post_meta( $post_id, 'exibir-bloco-info', true);
+				$retorno .= '<input type="hidden" id="show_bloco_info_'.$post_id.'" value='.($show_info === true ? 1 : 0).'>';
                 $termos = get_post_meta($post_id, 'termos-gerais', true);
 
 
-                for ($i=0; $i < count($tarifario); $i++) { 
+                for ($i=0; $i < count($tarifario); $i++) {  
                     $data_inicial = $tarifario[$i]["data_inicial"];
                     $data_final = $tarifario[$i]["data_final"];
                     $periodo = $tarifario[$i]["nome"];
-                    $tipo = $tarifario[$i]["tipo_periodo"];
+                    $tipo = $tarifario[$i]["tipo"];
                     $tipo_periodo = $tarifario[$i]["tipo_periodo"];
                     $moeda = $tarifario[$i]["moeda"];  
                     $passeios_roteiro = get_post_meta( $post_id, 'passeios-e-servicos', true);
@@ -2374,17 +2455,34 @@ function invenDescSort($a, $b)
                     $dias = get_post_meta( $id, 'dias', true);
                     $noites = get_post_meta( $id, 'noites', true);
 
-                    for ($x1=0; $x1 < count($tarifario_valores); $x1++) {  
+                     
                         $tipo_diarias = get_post_meta( $id, 'pacote', true);
-                        if($tipo_diarias == 0){
-                            if(!empty($tarifario_valores[$x1]["tarifario"]["valor_pacote_double"]) || $tarifario_valores[$x1]["tarifario"]["valor_pacote_double"] != 0){
-                                $valor_double[] = intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_double"])));
-                            }
-                        }else{ 
-
-                            $valor_double[] = min(array(intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_dom"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_seg"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_ter"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_qua"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_qui"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_sex"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_sex"])))));
-                        }
-                    }  
+                        if($tipo_diarias == 0){   
+							$value[$i] = [];
+							for ($x1=0; $x1 < count($tarifario_valores); $x1++) {
+								if ((strcmp(strtolower(str_replace("-", "+", str_replace("---", "-", str_replace(" ", "-", str_replace("+", "-", trim($periodo)))))), strtolower(str_replace(" ", "-", str_replace("-", "+", str_replace("---", "-", str_replace("+", "-", trim($tarifario_valores[$x1]["tarifario"]["tarifario_roteiro"]))))))) === 0)) {
+									if(intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_double"]))) > 0){
+										$value[$i][] = intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_double"]))); 
+									}
+									if(intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_triple"]))) > 0){
+										$value[$i][] = intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_triple"]))); 
+									}
+									if(intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_single"]))) > 0){
+										$value[$i][] = intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_pacote_single"]))); 
+									}
+								}
+							}    
+									//$retorno .= json_encode($value[$i]);
+							if(count($value[$i]) > 0){ 
+								$valor_double[$i] = min($value[$i]);
+							}else{
+								$valor_double[$i] = [];
+							}  
+                        }else{   
+							for ($x1=0; $x1 < count($tarifario_valores); $x1++) { 
+                            	$valor_double[] = min(array(intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_dom"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_seg"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_ter"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_qua"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_qui"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_sex"]))), intval(str_replace(",", ".", str_replace(".", "", $tarifario_valores[$x1]["tarifario"]["valor_sex"])))));
+							}
+						} 
 
                     for ($x=0; $x < count($tarifario_valores); $x++) {  
                         if ((strcmp(strtolower(str_replace("-", "+", str_replace("---", "-", str_replace(" ", "-", str_replace("+", "-", trim($periodo)))))), strtolower(str_replace(" ", "-", str_replace("-", "+", str_replace("---", "-", str_replace("+", "-", trim($tarifario_valores[$x]["tarifario"]["tarifario_roteiro"]))))))) === 0)) {
@@ -2434,15 +2532,14 @@ function invenDescSort($a, $b)
                             }
 
                             $check_valor_padrao = $tarifario_valores[$x]["tarifario"]["check_valor_padrao"];
-                            $valor_padrao = $tarifario_valores[$x]["tarifario"]["valor_padrao"];
-
-                            $valor = min($valor_double);
+                            $valor_padrao = $tarifario_valores[$x]["tarifario"]["valor_padrao"]; 
+							$valor = $valor_double[$i]; 
 
                             $check_permite_crianca = $tarifario_valores[$x]["tarifario"]["check_permite_crianca"];
                             $crianca1 = $tarifario_valores[$x]["tarifario"]["crianca1"];
                             $crianca2 = $tarifario_valores[$x]["tarifario"]["crianca2"];
                             $crianca3 = $tarifario_valores[$x]["tarifario"]["crianca3"]; 
-
+							$qtd_pax_apto = get_term_meta($tarifario_valores[$x]["tarifario"]["apto_roteiro"], 'term_qtd_pax', true);
                             $bloco_tarifario[date("d-m-Y", strtotime(implode("-", array_reverse(explode("/", $data_inicial)))))][] = array(
                                 "data_inicial" => $data_inicial, 
                                 "data_final" => $data_final,  
@@ -2499,6 +2596,7 @@ function invenDescSort($a, $b)
                                 "crianca1" => $crianca1,  
                                 "crianca2" => $crianca2,  
                                 "crianca3" => $crianca3,  
+								"qtd_pax_apto" => $qtd_pax_apto,
                                 "tarifario" => $tarifario_valores[$x]["tarifario"]
                             );
 
@@ -2509,8 +2607,7 @@ function invenDescSort($a, $b)
                         $valor = 0;
                     }  
 
-                    $dados[$data_inicial] = array("data" => date("Y-m-d", strtotime(implode("-", array_reverse(explode("/", $data_inicial))))), "dias" => $dias.' dias '.$noites.' noites', "noites" => $noites, "tipo_periodo" => $tipo_periodo, "periodo" => $periodo, "datas" => $data_inicial.' a '.$data_final, "moeda" => $moeda, "nome_roteiro" => $nome_roteiro, "show_titulo" => $show_titulo, "passeios_roteiro" => $passeios_roteiro,  "transporte_roteiro" => $transporte_roteiro, "valor" => $valor, "tarifario" => $bloco_tarifario[date("d-m-Y", strtotime(implode("-", array_reverse(explode("/", $data_inicial)))))]["tarifario"], "tarifario_exibicao" => $bloco_tarifario[date("d-m-Y", strtotime(implode("-", array_reverse(explode("/", $data_inicial)))))]);
-				//print_r($dados);
+                    $dados[$data_inicial] = array("data" => date("Y-m-d", strtotime(implode("-", array_reverse(explode("/", $data_inicial))))), "dias" => $dias.' dias '.$noites.' noites', "noites" => $noites, "tipo_periodo" => $tipo_periodo, "periodo" => $periodo, "datas" => $data_inicial.' a '.$data_final, "moeda" => $moeda, "nome_roteiro" => $nome_roteiro, "show_titulo" => $show_titulo, "show_info" => $show_info, "passeios_roteiro" => $passeios_roteiro,  "transporte_roteiro" => $transporte_roteiro, "valor" => $valor, "tarifario" => $bloco_tarifario[date("d-m-Y", strtotime(implode("-", array_reverse(explode("/", $data_inicial)))))]["tarifario"], "tarifario_exibicao" => $bloco_tarifario[date("d-m-Y", strtotime(implode("-", array_reverse(explode("/", $data_inicial)))))]); 
                 }
 
                 $blocos = array_values($dados); 
@@ -2595,22 +2692,22 @@ function invenDescSort($a, $b)
                         text-align:left;
                     }
                     .btn-tarifa-visualizar{
-                        background-color:#2ba936 !important;
+                        background-color:var(--e-global-color-primary) !important;
                         color:#fff !important;
                     }
                     .btn-tarifa-visualizar:hover{
-                        background-color:#137e18 !important;
+                        background-color:var(--e-global-color-text) !important;
                         color:#fff !important;
                     }
                     .btn-visualizar-tarifa{
-                            background-color: #137e18!important;
+                            background-color: var(--e-global-color-primary)!important;
                         color: #fff!important;
-                        border: 1px solid #137e18;
+                        border: 1px solid var(--e-global-color-primary);
                     }
                     .btn-visualizar-tarifa:hover{
-                        background-color:#2ba936 !important;
+                        background-color:var(--e-global-color-text) !important;
                         color:#fff !important;
-                        border: 1px solid #2ba936;
+                        border: 1px solid var(--e-global-color-text);
                     }
                     .swal-text{
                         text-align:center !important;
@@ -2619,12 +2716,12 @@ function invenDescSort($a, $b)
                         text-align:center !important;
                     }
                     .swal-button--confirm {
-                        background-color: #137e18 !important;   
-                        border-color: #137e18 !important;   
+                        background-color: var(--e-global-color-primary) !important;   
+                        border-color: var(--e-global-color-primary) !important;   
                     }
                     .swal-button--confirm:hover {
-                        background-color: #137e18 !important;   
-                        border-color: #137e18 !important;   
+                        background-color: var(--e-global-color-primary) !important;   
+                        border-color: var(--e-global-color-primary) !important;   
                     }
 
                     .qty .count, .qty .count1, .qty .count2, .qty .count3, .qty .count4, .qty .count5, .qty .count6, .qty .count7, .qty .count8, .qty .count9, .qty .count10, .qty .countQ, .qty .countC, .qty .countC1, .qty .countC2, .qty .countC3, .qty .countC4, .qty .countC5, .qty .countC6, .qty .countC7, .qty .countC8, .qty .countC9, .qty .countC10 {
@@ -2702,7 +2799,7 @@ function invenDescSort($a, $b)
                                     </div>
                                 </div>
                             </div>
-                            <div class="elementor-column elementor-col-80 elementor-top-column elementor-element elementor-element-0973bc7" data-id="0973bc7" data-element_type="column">
+                            <div class="elementor-column elementor-col-70 elementor-top-column elementor-element elementor-element-0973bc7" data-id="0973bc7" data-element_type="column">
                                 <div class="elementor-widget-wrap elementor-element-populated" style="background-color: #f9f9f9;">
                                     <div class="elementor-element elementor-element-8d6b5de elementor-widget elementor-widget-heading" data-id="8d6b5de" data-element_type="widget" data-widget_type="heading.default">
                                         <div class="elementor-widget-container">
@@ -2711,11 +2808,11 @@ function invenDescSort($a, $b)
                                     </div>
                                 </div>
                             </div>
-                            <div class="elementor-column elementor-col-10 elementor-top-column elementor-element elementor-element-0973bc7" data-id="0973bc7" data-element_type="column">
+                            <div class="elementor-column elementor-col-20 elementor-top-column elementor-element elementor-element-0973bc7" data-id="0973bc7" data-element_type="column">
                                 <div class="elementor-widget-wrap elementor-element-populated" style="background-color: #f9f9f9;">
                                     <div class="elementor-element elementor-element-8d6b5de elementor-widget elementor-widget-heading" data-id="8d6b5de" data-element_type="widget" data-widget_type="heading.default">
                                         <div class="elementor-widget-container">
-                                            <h2 class="elementor-heading-title elementor-size-default"><a onclick="see_tarifas(\''.$post_id.'\', \''.str_replace("/", "-", $dados_gerais[0]["data_inicial"]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: #137e18;color: #fff;font-size: 14px;padding: 6px 18px;"><p style="margin-bottom: 0;display: flex;border: 1px solid #137e18 !important">Reservar <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
+                                            <h2 class="elementor-heading-title elementor-size-default"><a onclick="see_tarifas(\''.$post_id.'\', \''.str_replace("/", "-", $dados_gerais[0]["data_inicial"]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: var(--e-global-color-primary);color: #fff;font-size: 14px;padding: 6px 18px;"><p style="margin-bottom: 0;display: flex;border: 1px solid var(--e-global-color-primary) !important">Reservar <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
 
 
                                         </div>
@@ -2826,7 +2923,7 @@ function invenDescSort($a, $b)
                                 <div class="elementor-widget-wrap elementor-element-populated" style="display:flex;">
                                     <div class="elementor-element elementor-element-82cda83 elementor-widget elementor-widget-heading" data-id="82cda83" data-element_type="widget" data-widget_type="heading.default" style="padding-top:7px;">
                                         <div class="elementor-widget-container">
-                                            <h2 class="elementor-heading-title elementor-size-default h2line"> '.($blocos[$i]["valor"] == 0 ? 'Sob consulta' : 'a partir de '.$blocos[$i]["valor"].',').' <a onclick="see_tarifa_periodo(\''.$post_id.'\', \''.str_replace("/", "-", $datas[0]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: #137e18;color: #fff;font-size: 14px;padding: 6px 7px;"><p style="margin-bottom: 0;display: flex;border:1px solid #137e18 !important">$ <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
+                                            <h2 class="elementor-heading-title elementor-size-default h2line"> '.($blocos[$i]["valor"] == 0 ? 'Sob consulta' : 'a partir de '.$blocos[$i]["valor"].',').' <a onclick="see_tarifa_periodo(\''.$post_id.'\', \''.str_replace("/", "-", $datas[0]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: var(--e-global-color-primary);color: #fff;font-size: 14px;padding: 6px 7px;"><p style="margin-bottom: 0;display: flex;border:1px solid var(--e-global-color-primary) !important">$ <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
                                         </div>
                                     </div>
                                 </div>
@@ -2876,8 +2973,7 @@ function invenDescSort($a, $b)
                     $retorno .= '<input type="hidden" class="1 agrupamento_datas_finais_'.$post_id.'_'.str_replace("/", "-", $datas[0]).'" value=\''.json_encode($novasDatasFinais[date("m-Y", strtotime(implode("-", array_reverse(explode("/", $datas[0])))))]).'\'>';
                     $retorno .= '<input type="hidden" class="1 agrupamento_datas_periodos_'.$post_id.'_'.str_replace("/", "-", $datas[0]).'" value=\''.json_encode($novasDatasPeriodos[date("m-Y", strtotime(implode("-", array_reverse(explode("/", $datas[0])))))]).'\'>'; 
                         $retorno .= '<input type="hidden" class="1 numero_do_post " value="'.$post_id.'">';
-
-                        $retorno .= '<script>jQuery(document).ready(function(){  see_tarifas_inicial(\''.$post_id.'\', \''.str_replace("/", "-", $datas[0]).'\'); });</script>';
+                        $retorno .= '<input type="hidden" class="1 data_do_post_'.$post_id.' " value="'.str_replace("/", "-", $datas[0]).'">'; 
 
                     $dados_gerais = $bloco_tarifario[str_replace("/", "-", $datas[0])];  
 
@@ -2899,11 +2995,11 @@ function invenDescSort($a, $b)
                                                         <input class="jet-form__field hidden-field" type="hidden" name="_jet_engine_booking_form_id" value="350" data-field-name="_jet_engine_booking_form_id" />
                                                         <input class="jet-form__field hidden-field" type="hidden" name="_jet_engine_refer" value="https://site02.traveltec.com.br/exibicao-do-shortcode-roteiros" data-field-name="_jet_engine_refer" />
                                                         <div class="jet-form-row jet-form-row--submit jet-form-row--first-visible">
-                                                            <div class="jet-form-col '.($dados_gerais[0]["tipo_diarias"] == 1 ? 'jet-form-col-2' : 'jet-form-col-5').' field-type-date jet-form-field-container" data-field="field_checkin" data-conditional="false">
+                                                            <div class="jet-form-col '.($dados_gerais[0]["tipo_diarias"] == 1 ? 'jet-form-col-2' : 'jet-form-col-4').' field-type-date jet-form-field-container" data-field="field_checkin" data-conditional="false">
                                                                 <div class="jet-form__label">
                                                                     <span class="jet-form__label-text" style="color:#3e3e3e">Data Inicial<span class="jet-form__required">*</span></span>
                                                                 </div> 
-                                                                <input class="jet-form__field date-field date-field-checkin" required="required" name="field_checkin" type="text" data-field-name="field_checkin" id="field_checkin_'.$post_id.'_'.str_replace("/", "-", $datas[0]).'" readonly value="'.$data_inicial_form.'">
+                                                                <input class="jet-form__field date-field date-field-checkin" required="required" name="field_checkin" type="text" data-field-name="field_checkin" id="field_checkin_'.$post_id.'_'.str_replace("/", "-", $datas[0]).'" readonly value="'.$data_inicial_form.'" '.($dados_gerais[0]["tipo_diarias"] == 1 ? '' : 'disabled').' style="'.($dados_gerais[0]["tipo_diarias"] == 1 ? '' : 'background-color:#f1f1f1').'">
                                                             </div>';
                                                             if($dados_gerais[0]["tipo_diarias"] == 1){
                                                                 $retorno .= '<div class="jet-form-col jet-form-col-2 field-type-date jet-form-field-container" data-field="field_checkout" data-conditional="false">
@@ -2949,7 +3045,7 @@ function invenDescSort($a, $b)
                                                                 </select>
                                                             </div>'; 
 
-                                                            $retorno .= '<div class="jet-form-col '.($dados_gerais[0]["tipo_diarias"] == 1 ? 'jet-form-col-3' : 'jet-form-col-7').' field-type-submit jet-form-field-container" data-field="Submit" data-conditional="false">
+                                                            $retorno .= '<div class="jet-form-col '.($dados_gerais[0]["tipo_diarias"] == 1 ? 'jet-form-col-3' : 'jet-form-col-3').' field-type-submit jet-form-field-container" data-field="Submit" data-conditional="false">
                                                                 <div class="jet-form__submit-wrap">
                                                                     
                                                                     <button class="jet-form__submit submit-type-ajax  btn-visualizar-tarifa" type="button" onclick="show_div_count_atualizar(\''.str_replace("/", "-", $datas[0]).'\', \''.$post_id.'\')">PESQUISAR</button>
@@ -3023,27 +3119,27 @@ function invenDescSort($a, $b)
                     $retorno .= '<div class="div_tarifario_data_'.str_replace("/", "-", $datas[0]).'_'.$post_id.' '.$post_id.'_bloco_tarifas_tarifario bloco_tarifas div_bloco_hotelaria_'.$post_id.'_'.$cnt.'" style="display:none">';
                             $retorno .= '<section class="elementor-section elementor-top-section elementor-element elementor-element-739dedd elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="739dedd" data-element_type="section">
                                 <div class="elementor-container elementor-column-gap-default">
-                                    <div class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-a56b981" data-id="a56b981" data-element_type="column">
+                                    <div class="elementor-column elementor-col-100 elementor-top-column elementor-element elementor-element-a56b981d" data-id="a56b981d" data-element_type="column">
                                         <div class="elementor-widget-wrap elementor-element-populated" style="padding:10px 4px;">
                                             <div class="elementor-element elementor-element-fda57c5 elementor-widget elementor-widget-image" data-id="fda57c5" data-element_type="widget" data-widget_type="image.default">
                                                 <div class="elementor-widget-container" style="text-align:justify">
-                                                    <h2 class="elementor-heading-title elementor-size-default" style="font-size: 22px;color: #137e18;">'.$nome_roteiro.'</h2><br>'; 
-                                                    if(!empty($dados_gerais[0]["transporte_roteiro"]) || !empty($dados_gerais[0]["hotel_pacote"]) || !empty($dados_gerais[0]["passeios_roteiro"]) || !empty($dados_gerais[0]["informacoes_pacote"])){
+                                                    <h2 class="elementor-heading-title elementor-size-default" style="font-size: 22px;color: var(--e-global-color-primary);">'.$nome_roteiro.'</h2><br>'; 
+                                                    if((!empty($dados_gerais[0]["transporte_roteiro"]) || !empty($dados_gerais[0]["hotel_pacote"]) || !empty($dados_gerais[0]["passeios_roteiro"]) || !empty($dados_gerais[0]["informacoes_pacote"])) && $show_info === true){
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 13px;font-weight: 400;"><i>Valor do Pacote inclui:</i></h2>';
                                                     }
-                                                    if(!empty($dados_gerais[0]["transporte_roteiro"])){
+                                                    if(!empty($dados_gerais[0]["transporte_roteiro"]) && $show_info === true){
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 15px;font-weight: 400;line-height: 1.5;"><strong>Transporte:</strong> '.str_replace("u00c3u0094", " Ô", $dados_gerais[0]["transporte_roteiro"]).'</h2>';
                                                     }
-                                                    if(!empty($dados_gerais[0]["hotel_pacote"])){
+                                                    if(!empty($dados_gerais[0]["hotel_pacote"]) && $show_info === true){
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 15px;font-weight: 400;line-height: 1.5;"><strong>Hotel:</strong> '.$dados_gerais[0]["hotel_pacote"].'</h2>';
                                                     }
-                                                    if (!empty($dados_gerais[0]["passeios_roteiro"])) { 
+                                                    if (!empty($dados_gerais[0]["passeios_roteiro"]) && $show_info === true) { 
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 15px;font-weight: 400;line-height: 1.5;"><strong>Passeios e Serviços:</strong> '.str_replace(" | ", " + ", $dados_gerais[0]["passeios_roteiro"]).'</h2>';
                                                     }
-                                                    if (!empty($dados_gerais[0]["informacoes_pacote"])) { 
+                                                    if (!empty($dados_gerais[0]["informacoes_pacote"]) && $show_info === true) { 
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 15px;font-weight: 400;margin-top: 6px; ">Informações: '.str_replace(" | ", " + ", $dados_gerais[0]["informacoes_pacote"]).'</h2>';
                                                     }
-                                                    if (!empty($dados_gerais[0]["observacoes_pacote"])) { 
+                                                    if (!empty($dados_gerais[0]["observacoes_pacote"]) && $show_info === true) { 
                                                         $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="font-size: 15px;font-weight: 400;margin-top: 6px; "><strong>Observações:</strong> '.str_replace("u00ed", "í", str_replace("u00e3", "ã", str_replace("u00e0", "à", str_replace("u00e1", "á", str_replace("u00fa", "ú",  str_replace("u00f4", "ô",  str_replace("u00e7", "ç",  str_replace("u00e9", "é", str_replace("u00a0", " ", $dados_gerais[0]["observacoes_pacote"]))))))))).'</h2>';
                                                     } 
                                                 $retorno .= '</div>
@@ -3078,19 +3174,19 @@ function invenDescSort($a, $b)
 
                                             $taxas_total[$x] = ($iss_hotel[$x]+$taxas_hotel[$x]+$taxas_opcional_hotel[$x]);
 
-                                            $data_hotel = $wpdb->get_results( "SELECT * FROM wp_terms WHERE term_id = $id_hotel"); 
+                                            $data_hotel = $wpdb->get_results( "SELECT * FROM ".$table."terms WHERE term_id = $id_hotel"); 
                                             $nome_hotel = $data_hotel[0]->name; 
 
-                                            $data_apto = $wpdb->get_results( "SELECT * FROM wp_terms WHERE term_id = $id_apto"); 
+                                            $data_apto = $wpdb->get_results( "SELECT * FROM ".$table."terms WHERE term_id = $id_apto"); 
                                             $nome_apto = $data_apto[0]->name;
 
-                                            $data_regime = $wpdb->get_results( "SELECT * FROM wp_terms WHERE term_id = $id_regime"); 
+                                            $data_regime = $wpdb->get_results( "SELECT * FROM ".$table."terms WHERE term_id = $id_regime"); 
                                             $nome_regime = $data_regime[0]->name;
 
-                                            $localizacao_hotel_sql = $wpdb->get_results( "SELECT meta_value FROM wp_termmeta WHERE term_id = $id_hotel AND meta_key = 'term_hotel_localizacao'");  
+                                            $localizacao_hotel_sql = $wpdb->get_results( "SELECT meta_value FROM ".$table."termmeta WHERE term_id = $id_hotel AND meta_key = 'term_hotel_localizacao'");  
                                             $localizacao_hotel = $localizacao_hotel_sql[0]->meta_value;
 
-                                            $categoria_hotel_sql = $wpdb->get_results( "SELECT meta_value FROM wp_termmeta WHERE term_id = $id_hotel AND meta_key = 'term_hotel_categoria'");  
+                                            $categoria_hotel_sql = $wpdb->get_results( "SELECT meta_value FROM ".$table."termmeta WHERE term_id = $id_hotel AND meta_key = 'term_hotel_categoria'");  
                                             $categoria_hotel = $categoria_hotel_sql[0]->meta_value;
 
                                             if($x % 2 == 0){                
@@ -3157,7 +3253,7 @@ function invenDescSort($a, $b)
                                             if(empty($dados_gerais[$x]["valor_pacote_triple"]) && empty($dados_gerais[$x]["valor_pacote_double"])){ 
                                                 $qtd_pax_pacote = 1;
                                             } 
-                                            $quartos[str_replace("/", "-", $datas[0])][] = array("nome_roteiro" => $nome_roteiro, "tipo_periodo" => get_post_meta( $id, 'pacote', true), "taxas" => get_post_meta( $id, 'valor_taxas', true), "moeda" => $dados_gerais[0]["moeda"], "foto_hotel" => $imagem_hotel[$x], "nome_hotel" => $nome_hotel, "localizacao_hotel" => $localizacao_hotel, "categoria_hotel" => $categoria_hotel, "categoria_apto" => $nome_apto, "regime_apto" => $nome_regime, "tipo_pacote" => ($dados_gerais[0]["tipo_pacote"] == 0 ? 'Pacote aéreo' : 'Pacote terrestre'), "noites_pacote" => get_post_meta( $id, 'noites', true), "valor_pacote_single" => (empty($dados_gerais[$x]["valor_pacote_single"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_single"]))), "valor_pacote_double" => (empty($dados_gerais[$x]["valor_pacote_double"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_double"]))), "valor_pacote_triple" => (empty($dados_gerais[$x]["valor_pacote_triple"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_triple"]))), "qtd_pax" => $qtd_pax_pacote);  
+                                            $quartos[str_replace("/", "-", $datas[0])][] = array("nome_roteiro" => $nome_roteiro, "tipo_periodo" => $dados_gerais[0]["tipo_tarifario"], "taxas" => get_post_meta( $id, 'valor_taxas', true), "moeda" => $dados_gerais[0]["moeda"], "foto_hotel" => $imagem_hotel[$x], "nome_hotel" => str_replace("'", "%ap", $nome_hotel), "localizacao_hotel" => $localizacao_hotel, "categoria_hotel" => $categoria_hotel, "categoria_apto" => $nome_apto, "data_final" => $dados_gerais[$x]["data_final"], "regime_apto" => $nome_regime, "tipo_pacote" => ($dados_gerais[0]["tipo_pacote"] == 0 ? 'Pacote aéreo' : 'Pacote terrestre'), "noites_pacote" => get_post_meta( $id, 'noites', true), "valor_pacote_single" => (empty($dados_gerais[$x]["valor_pacote_single"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_single"]))), "valor_pacote_double" => (empty($dados_gerais[$x]["valor_pacote_double"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_double"]))), "valor_pacote_triple" => (empty($dados_gerais[$x]["valor_pacote_triple"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_pacote_triple"]))), "qtd_pax_apto" => $dados_gerais[$x]["qtd_pax_apto"], "qtd_pax" => $qtd_pax_pacote);  
 
                                             $quartos_diaria[str_replace("/", "-", $datas[0])][] = array("termos" => $termos, "nome_roteiro" => $nome_roteiro, "tipo_periodo" => get_post_meta( $id, 'pacote', true), "id_hotel" => $id_hotel, "taxas" => $taxas_total[$x], "iss" => $iss_hotel[$x], "taxas_hotel" => $taxas_hotel[$x], "taxas_opcional_hotel" => $taxas_opcional_hotel[$x], "moeda" => $dados_gerais[0]["moeda"], "foto_hotel" => $imagem_hotel[$x], "nome_hotel" => $nome_hotel, "distancia" => $dados_div_tarifario["distancia"], "lotado" => $dados_div_tarifario["lotado"], "consulta" => $dados_div_tarifario["consulta"], "localizacao_hotel" => $localizacao_hotel, "categoria_hotel" => $categoria_hotel, "categoria_apto" => $nome_apto, "regime_apto" => $nome_regime, "tipo_pacote" => ($dados_gerais[0]["tipo_pacote"] == 0 ? 'Pacote aéreo' : 'Pacote terrestre'), "noites_pacote" => ($dados_gerais[$x]["min_diarias"] > 0 ? $dados_gerais[$x]["min_diarias"] : get_post_meta( $id, 'noites', true)), "valor_dom" => (empty($dados_gerais[$x]["valor_dom"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_dom"]))), "valor_seg" => (empty($dados_gerais[$x]["valor_seg"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_seg"]))), "valor_ter" => (empty($dados_gerais[$x]["valor_ter"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_ter"]))), "valor_qua" => (empty($dados_gerais[$x]["valor_qua"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_qua"]))), "valor_qui" => (empty($dados_gerais[$x]["valor_qui"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_qui"]))), "valor_sex" => (empty($dados_gerais[$x]["valor_sex"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_sex"]))), "valor_sab" => (empty($dados_gerais[$x]["valor_sab"]) ? 0 : str_replace(",", ".", str_replace(".", "", $dados_gerais[$x]["valor_sab"]))), "qtd_pax" => $dados_gerais[$x]["pax"]);  
 
@@ -3192,7 +3288,7 @@ function invenDescSort($a, $b)
                                                                         <div class="elementor-widget-wrap elementor-element-populated">
                                                                             <div class="elementor-element elementor-element-64b43e0 elementor-widget elementor-widget-heading" data-id="64b43e0" data-element_type="widget" data-widget_type="heading.default">
                                                                                 <div class="elementor-widget-container">
-                                                                                    <h2 class="elementor-heading-title elementor-size-default"><strong>'.$nome_hotel.'</strong></h2>';
+                                                                                    <h2 class="elementor-heading-title elementor-size-default"><strong>'.json_encode($dados_div_tarifario).'</strong></h2>';
                                                                                 if (!empty($localizacao_hotel)) { 
                                                                                     $retorno .= '<h2 class="elementor-heading-title elementor-size-default" style="margin-top: 6px;font-size:13px;"> '.(!empty($localizacao_hotel) ? $localizacao_hotel : '').' '.(!empty($categoria_hotel) ? ' <br> '.$categoria_hotel : '').'</h2>';
                                                                                 }
@@ -3591,6 +3687,8 @@ function invenDescSort($a, $b)
                 
 
                 $retorno .= '</div>';
+				
+				$retorno .= '<input type="hidden" id="urlAjax" value="'.plugin_dir_url( __FILE__ ).'">';
 
                 return $retorno;
             }else{
@@ -4013,7 +4111,7 @@ function invenDescSort($a, $b)
         $mensagem .= '</div>';
 
         $headers = "From: Mello Faro Turismo e Viagens <reservaonline@mellofaro.com.br>";
-        if(wp_mail( "reservaonline@mellofaro.com.br", $_POST['roteiro']." - Nova solicitação de cotação!", $mensagem, $headers )){
+        if(wp_mail( "sac@traveltec.com.br", $_POST['roteiro']." - Nova solicitação de cotação!", $mensagem, $headers )){
             if(wp_mail( $_POST['email'], $_POST['roteiro']." - Solicitação de cotação efetuada!", $mensagem, $headers )){
                 echo 1;
             }else{
@@ -4098,7 +4196,7 @@ function invenDescSort($a, $b)
 
         $code_termo = $_POST['code']; 
 
-        $localizacao_hotel_sql = $wpdb->get_results( "SELECT * FROM wp_postmeta WHERE post_id = '$code_termo' AND meta_key = 'termos-gerais'");  
+        $localizacao_hotel_sql = $wpdb->get_results( "SELECT * FROM ".$table."postmeta WHERE post_id = '$code_termo' AND meta_key = 'termos-gerais'");  
         $termo_id = $localizacao_hotel_sql[0]->meta_value;
         $data = get_term($termo_id)->description; 
         print_r($data);
@@ -4290,8 +4388,10 @@ function invenDescSort($a, $b)
     function extended_thankyou_change_order_status( $order_id ){ 
 		
 		$order = wc_get_order($order_id);
+		 
+		$total = $order->get_total();
        // Get a an instance of order object
-        if ($_SESSION['tipo_tarifario'] == 0) {  
+        if ($total == 0 || $total == "0.00" || intval($total) == 0) {  
             $order->set_status('arrival-shipment');
             $order->save();
         } 
@@ -4304,19 +4404,26 @@ function invenDescSort($a, $b)
         if ($_SESSION['tipo_tarifario'] == 0) { 
             unset(  $available_gateways['itau-shopline'] );
             unset(  $available_gateways['checkout-cielo'] );
+            unset(  $available_gateways['woo-mercado-pago-basic'] );
+            unset(  $available_gateways['woo-mercado-pago-custom'] );
+            unset(  $available_gateways['woo-mercado-pago-pix'] );
+            unset(  $available_gateways['woo-mercado-pago-ticket'] );
             return $available_gateways; 
         }else{
+                unset(  $available_gateways['cod'] );
             if($_SESSION['methodo'] == 1){
                 unset(  $available_gateways['itau-shopline'] );
                 unset(  $available_gateways['cod'] );
+            unset(  $available_gateways['woo-mercado-pago-pix'] );
+				            unset(  $available_gateways['woo-mercado-pago-ticket'] );
                 return $available_gateways;
             }else if($_SESSION['methodo'] == 2){
                 unset(  $available_gateways['checkout-cielo'] );
                 unset(  $available_gateways['cod'] );
+            unset(  $available_gateways['woo-mercado-pago-custom'] );
+            unset(  $available_gateways['woo-mercado-pago-pix'] );
                 return $available_gateways;
             }else{
-                unset(  $available_gateways['itau-shopline'] );
-                unset(  $available_gateways['checkout-cielo'] );
                 return $available_gateways;
             } 
         }
@@ -4327,13 +4434,13 @@ function invenDescSort($a, $b)
  
     function njengah_change_checkout_button_text( $button_text ) {
 
-        if ($_SESSION['tipo_tarifario'] == 1) { 
+        if ($_SESSION['tipo_tarifario'] == 0) { 
+            return 'Solicitar cotação';
+
+        }else{
         
             return 'Finalizar reserva'; // Replace this text in quotes with your respective custom button text
 
-        }else{
-
-            return 'Solicitar cotação';
 
         }
        
@@ -4627,8 +4734,8 @@ function value_payment_method(){
         $array_dados_tarifas = [];
         $array_dados_tarifas_ptt = [];
         for ($i=0; $i < count($json_nome); $i++) { 
-            $array_dados_tarifas[] = array("nome" => $json_nome[$i], "tipo" => $json_tipo[$i], "moeda" => "R$", "data_inicial" => $json_data_inicial[$i], "data_final" => $json_data_final[$i], "tipo_periodo" => $tipo_periodo[$i]);
-            $array_dados_tarifas_ptt[] = array("nome_tarifario" => $json_nome[$i], "tipo_tarifario" => $json_tipo[$i], "moeda_tarifario" => "US$", "data_inicial_tarifario" => $json_data_inicial[$i], "data_final_tarifario" => $json_data_final[$i], "tipo_periodo" => $tipo_periodo[$i]);
+            $array_dados_tarifas[] = array("nome" => trim($json_nome[$i]), "tipo" => $json_tipo[$i], "moeda" => "R$", "data_inicial" => $json_data_inicial[$i], "data_final" => $json_data_final[$i], "tipo_periodo" => $tipo_periodo[$i]);
+            $array_dados_tarifas_ptt[] = array("nome_tarifario" => trim($json_nome[$i]), "tipo_tarifario" => $json_tipo[$i], "moeda_tarifario" => "US$", "data_inicial_tarifario" => $json_data_inicial[$i], "data_final_tarifario" => $json_data_final[$i], "tipo_periodo" => $tipo_periodo[$i]);
         }
 
         update_post_meta( $post_ID, 'dados_tarifas', serialize($array_dados_tarifas) ); 
@@ -4693,10 +4800,10 @@ function value_payment_method(){
 
     add_action( 'woocommerce_after_checkout_billing_form', 'display_extra_fields_after_billing_address' , 10, 1 );
 function display_extra_fields_after_billing_address () { ?>
-    <div class="woocommerce-billing-fields" style="margin: 0px 20px">
-        <h4 style="font-family: 'Open Sans'">Dados dos hóspedes</h4> 
+    <div class="woocommerce-billing-fields" style="margin: 0px">
+        <h4 style="font-family: 'Montserrat';font-weight: 700;">Dados dos hóspedes</h4> 
         <p class="form-row form-row-wide " id="billing_first_adt1_field" data-priority="10" style="margin-bottom: 0;padding-bottom: 0;">
-            <strong><img src="/wp-content/uploads/2022/07/imagem_2022-07-27_164034135.png" style="height: 23px;font-family: 'Open Sans'"> Adulto 1</strong>
+            <strong><i class="fa fa-user" style="margin-right: 5px;color: var(--e-global-color-primary);"></i> Adulto 1</strong>
         </p>
         <p class="form-row form-row-first validate-required" id="billing_first_nameadt1_field" data-priority="10" style="width: 33.3%">
             <label for="billing_first_nameadt1" class="" style="font-family: 'Open Sans'">Nome&nbsp;<abbr class="required" title="obrigatório">*</abbr></label>
@@ -4721,7 +4828,7 @@ function display_extra_fields_after_billing_address () { ?>
     if ($_SESSION['qtd_adt'] == 2 || $_SESSION['qtd_adt'] == 3) { 
 ?> 
         <p class="form-row form-row-wide " id="billing_first_adt2_field" data-priority="10" style="margin-bottom: 0;padding-bottom: 0;">
-            <strong><img src="/wp-content/uploads/2022/07/imagem_2022-07-27_164034135.png" style="height: 23px;font-family: 'Open Sans'"> Adulto 2</strong>
+            <strong><i class="fa fa-user" style="margin-right: 5px;color: var(--e-global-color-primary);"></i> Adulto 2</strong>
         </p>
         <p class="form-row form-row-first validate-required" id="billing_first_nameadt2_field" data-priority="10" style="width: 33.3%">
             <label for="billing_first_nameadt2_field" class="" style="font-family: 'Open Sans'">Nome&nbsp;<abbr class="required" title="obrigatório">*</abbr></label>
@@ -4748,7 +4855,7 @@ function display_extra_fields_after_billing_address () { ?>
     if ($_SESSION['qtd_adt'] == 3) { 
 ?>  
         <p class="form-row form-row-wide " id="billing_first_adt3_field" data-priority="10" style="margin-bottom: 0;padding-bottom: 0;">
-            <strong><img src="/wp-content/uploads/2022/07/imagem_2022-07-27_164034135.png" style="height: 23px;font-family: 'Open Sans'"> Adulto 3</strong>
+            <strong><i class="fa fa-user" style="margin-right: 5px;color: var(--e-global-color-primary);"></i> Adulto 3</strong>
         </p>
         <p class="form-row form-row-first validate-required" id="billing_first_nameadt3_field" data-priority="10" style="width: 33.3%">
             <label for="billing_first_nameadt3_field" class="" style="font-family: 'Open Sans'">Nome&nbsp;<abbr class="required" title="obrigatório">*</abbr></label>
@@ -4775,7 +4882,7 @@ function display_extra_fields_after_billing_address () { ?>
     if ($_SESSION['qtd_chd'] > 0) { 
 ?> 
         <p class="form-row form-row-wide " id="billing_first_chd1_field" data-priority="10" style="margin-bottom: 0;padding-bottom: 0;">
-            <strong><img src="/wp-content/uploads/2022/07/imagem_2022-07-27_164034135.png" style="height: 23px;font-family: 'Open Sans'"> Criança 1</strong>
+            <strong><i class="fa fa-child" style="margin-right: 5px;color: var(--e-global-color-primary);"></i> Criança 1</strong>
         </p>
         <p class="form-row form-row-first validate-required" id="billing_first_namechd1_field" data-priority="10" style="width: 33.3%">
             <label for="billing_first_namechd1" class="" style="font-family: 'Open Sans'">Nome&nbsp;<abbr class="required" title="obrigatório">*</abbr></label>
@@ -4967,4 +5074,6 @@ function change_bloqueio_order(){
 		update_post_meta( $post_id, 'dados_tarifario', serialize($data_room) );
 	
 }
+
+
     session_write_close();

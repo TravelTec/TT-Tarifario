@@ -76,73 +76,8 @@ require_once plugin_dir_path(__FILE__) . 'includes/tarifario-functions.php';
 
 
 
- require 'plugin-update-checker-4.10/plugin-update-checker.php';
-
- add_action( 'admin_init', 'tarifario_update_checker_setting' );  
 
 
-
-
-
-
-
-	function tarifario_update_checker_setting() { 
-
-
-
-
-
-
-
-        if ( ! is_admin() || ! class_exists( 'Puc_v4_Factory' ) ) {  
-
-
-
-            return;  
-
-
-
-        }  
-
-
-
-
-
-
-
-        $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker( 
-
-
-
-            'https://github.com/TravelTec/TT-Tarifario',  
-
-
-
-            __FILE__,  
-
-
-
-            'TT-Tarifario'  
-
-
-
-        );  
-
-
-
-	
-
-
-
-        $myUpdateChecker->setBranch('main'); 
-
-
-
-
-
-
-
-    }
 
 
 

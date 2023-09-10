@@ -2,6 +2,10 @@
 	background-color: #eee !important;
 }
 
+.interface-interface-skeleton__content{
+	overflow-x: hidden;
+}
+
 .nav-pills .nav-link{
 	padding: 11px;  
 	background-color: #fafafa;

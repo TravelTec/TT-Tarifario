@@ -1,20 +1,45 @@
 jQuery(document).ready(function(){ 
+	
+	see_tarifas(jQuery(".numero_do_post").val(), jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val());
  
   jQuery("#billing_cpf_cnpj").addClass("mascara_cpf_ou_cnpj")
   jQuery("#billing_cpf").addClass("mascara_cpf_ou_cnpj")
   jQuery("#billing_cnpj").addClass("mascara_cpf_ou_cnpj")
   jQuery("#shipping_postcode").mask("00000-000");
-  jQuery("#billing_phone").addClass("mascara_telefone_nono_digito")
-  
-  jQuery("#billing_postcode").attr("style", "display:none;");
-  jQuery("#billing_address_1").attr("style", "display:none;");
-  jQuery("#billing_address_2").attr("style", "display:none;");
-  jQuery("#billing_city").attr("style", "display:none;");
-  jQuery("#billing_country").attr("style", "display:none;");
-  jQuery("#billing_state").attr("style", "display:none;");
+  jQuery("#billing_phone").addClass("mascara_telefone_nono_digito");
+	jQuery("#billing_phone").mask("(99) 99999-9999");
 	
-	jQuery("#billing_company_field label").html('Nome da empresa <abbr class="required" title="obrigatório">*</abbr>')
-	jQuery("#billing_cnpj_field label").html('CNPJ <abbr class="required" title="obrigatório">*</abbr>')
+  jQuery("#billing_company_field").attr("style", "display:none;");
+  
+if(parseInt(localStorage.getItem("TIPO_TARIFARIO")) == 0){
+  jQuery("#billing_postcode_field").attr("style", "display:none;");
+  jQuery("#billing_address_1_field").attr("style", "display:none;");
+  jQuery("#billing_address_2_field").attr("style", "display:none;");
+  jQuery("#billing_city_field").attr("style", "display:none;");
+  jQuery("#billing_country_field").attr("style", "display:none;");
+  jQuery("#billing_state_field").attr("style", "display:none;");
+	
+	jQuery(".woocommerce-billing-fields").append('<input type="hidden" id="billing_country" name="billing_country" value="BR">');
+	jQuery(".woocommerce-billing-fields").append('<input type="hidden" id="billing_state" name="billing_state" value="SP">');
+	jQuery(".woocommerce-billing-fields").append('<input type="hidden" id="billing_postcode" name="billing_postcode" value="31520000">');
+  
+  jQuery("#billing_postcode").val("0");
+  jQuery("#billing_address_1").val("0");
+  jQuery("#billing_address_2").val("0");
+  jQuery("#billing_city").val("0");  
+  jQuery("#billing_state").val("0");
+  jQuery("#billing_company").val("0"); 
+	
+  jQuery("#shipping_postcode").val("0");
+  jQuery("#shipping_address").val("0");
+  jQuery("#shipping_address").val("0");
+  jQuery("#shipping_city").val("0"); 
+  jQuery("#shipping_state").val("0");
+  jQuery("#shipping_company").val("0");
+}
+	
+	//jQuery("#billing_company_field label").html('Nome da empresa <abbr class="required" title="obrigatório">*</abbr>')
+	//jQuery("#billing_cnpj_field label").html('CNPJ <abbr class="required" title="obrigatório">*</abbr>')
   
   jQuery("#shipping_city").attr("onchange", "change_value_field('city')");
   jQuery("#shipping_country").attr("onchange", "change_value_field('country')");
@@ -68,6 +93,7 @@ jQuery(document).ready(function(){
 
   }
   if(url.indexOf("/finalizar-compra") !== -1){  
+	  jQuery("label").attr("style", "font-family: 'Montserrat'")
 	  if(url.indexOf("?key") !== -1){
 		  var room_selected = localStorage.getItem("QUARTO_SELECTED");
 		  var data_room_selected = localStorage.getItem("DADOS_QUARTO_"+room_selected);
@@ -98,7 +124,11 @@ jQuery(document).ready(function(){
   }
 
   if(url.indexOf("/checkout-page/") !== -1){  
+	  jQuery("#order_review_heading").append('<br> '+localStorage.getItem("NOMEROTEIRO"));
     show_options_conditional_payment();
+  }
+  if(url.indexOf("finalizar-compra") !== -1){  
+	  jQuery("#order_review_heading").append('<br> <h5 style="font-size: 20px;margin: 8px 0;"> '+localStorage.getItem("NOMEROTEIRO")+'</h5>'); 
   }
 
   jQuery("#button-news").attr("onclick", "send_data_news()");
@@ -502,7 +532,7 @@ function getDayName(dateStr, locale)
 function show_div_count_atualizar(data_id_div, code){ 
 	localStorage.setItem("ID_POST_TARIFARIO", code);
   //toggle_div_room(code);
-
+	 
   if (jQuery("#tipo_diarias_"+code+"_"+data_id_div).val() == 0) { 
 
     var data_checkin = jQuery("#data_form_inicial_"+code+"_"+data_id_div).val();
@@ -574,8 +604,20 @@ function show_div_count_atualizar(data_id_div, code){
       }
     } 
 
-    var qtd_noites_calculo = parseInt(jQuery(".noites_pacote"+code).val())
-    const noites = jQuery(".noites_pacote"+code).val(); 
+    var data_inicio = jQuery("#data_form_"+code+"_"+data_id_div).val().split("/");
+	data_inicio = data_inicio[2]+"-"+data_inicio[1]+"-"+data_inicio[0];
+	var data_fim = jQuery("#data_form_inicial_"+code+"_"+data_id_div).val().split("/");
+	data_fim = data_fim[2]+"-"+data_fim[1]+"-"+data_fim[0];
+
+	var agora = moment(data_inicio); // Data de hoje 
+	var antes = moment(data_fim); // Outra data no passado 
+	var duracao = moment.duration(agora.diff(antes)); 
+
+	// Mostra a diferença em dias
+	var dias = duracao.asDays();
+	var noitesSSS = parseInt(dias); 
+
+    var qtd_noites_calculo = noitesSSS;  
 
     if (contador_tarifas == 0) {
       swal({
@@ -627,28 +669,44 @@ function show_div_count_atualizar(data_id_div, code){
       retorno += "<h5>Opções disponíveis:</h5>";
 
       for (var i = 0; i < json_quartos.length; i++) {
-
-        var dados_quarto = json_quartos[i]; 
+        var dados_quarto = json_quartos[i];  
+	
+		  	if(parseInt(jQuery("#field_adt_"+code+"_"+data_id_div).val()) == parseInt(dados_quarto.qtd_pax_apto)){
         var pax_por_quarto = 1;
         var desc_quarto = "Single";
-        var valor_quarto = 0;  
+        var valor_quarto = 0;   
 
         var localizacao = "";
         if (dados_quarto.localizacao_hotel != null) {
           localizacao = '<h2 class="elementor-heading-title elementor-size-default" style="margin-top: 6px;font-size:13px;"> '+dados_quarto.localizacao_hotel+'</h2>';
         } 
-
-        retorno += '<section class="elementor-section elementor-top-section elementor-element elementor-element-739dedd elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="739dedd" data-element_type="section" style="margin-bottom"> <div class="elementor-container elementor-column-gap-default">  <div class="elementor-column elementor-col-5 elementor-top-column elementor-element elementor-element-a56b981" data-id="a56b981" data-element_type="column" style="width: 5%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:10px 4px;"> <div class="elementor-element elementor-element-fda57c5 elementor-widget elementor-widget-image" data-id="fda57c5" data-element_type="widget" data-widget_type="image.default"> <div class="elementor-widget-container"> <input type="radio" class="form-control" id="check_set_'+data_id_div+'_'+code+'" name="check_set_'+data_id_div+'_'+code+'" onclick="change_set_value(\''+dados_quarto.nome_hotel+'\', \''+dados_quarto.categoria_apto+'\', \''+dados_quarto.tipo_pacote+'\', \''+jQuery("#data_form_inicial_"+code+'_'+data_id_div).val()+'\', \''+qtd_noites_calculo+'\', \''+dados_quarto.valor_pacote_single+'\', \''+dados_quarto.valor_pacote_double+'\', \''+dados_quarto.valor_pacote_triple+'\', \''+dados_quarto.nome_roteiro+'\', \''+dados_quarto.regime_apto+'\', \''+dados_quarto.tipo_periodo+'\')"> </div> </div> </div> </div> '+(dados_quarto.foto_hotel == 0 ? '' : '<div class="elementor-column elementor-col-20 elementor-top-column elementor-element elementor-element-a56b981" data-id="a56b981" data-element_type="column" style="width: 17%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:10px 4px;"> <div class="elementor-element elementor-element-fda57c5 elementor-widget elementor-widget-image" data-id="fda57c5" data-element_type="widget" data-widget_type="image.default"> <div class="elementor-widget-container"> <image width="800" height="533" src="'+dados_quarto.foto_hotel+'" style=""></div> </div> </div> </div>')+' <div class="elementor-column elementor-col-'+(dados_quarto.foto_hotel == 0 ? '30' : '20')+' elementor-top-column elementor-element elementor-element-94b74d9" data-id="94b74d9" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:0px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-ed40d30 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="ed40d30" data-element_type="section"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-8eb33fe" data-id="8eb33fe" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-64b43e0 elementor-widget elementor-widget-heading" data-id="64b43e0" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"><strong>'+dados_quarto.nome_hotel+'</strong></h2>'+localizacao+'  </div> </div> <div class="elementor-element elementor-element-63c9731 elementor-widget elementor-widget-heading" data-id="63c9731" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"><strong>'+(dados_quarto.regime_apto != null ? dados_quarto.regime_apto : '')+'</strong></h2> </div> </div> <div class="elementor-element elementor-element-6ec8aad elementor-widget elementor-widget-heading" data-id="6ec8aad" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default">'+(dados_quarto.categoria_apto != null ? dados_quarto.categoria_apto : '')+'</h2> </div> </div> </div> </div> </div> </section> </div> </div> <div class="elementor-column elementor-col-30 elementor-top-column elementor-element elementor-element-b83a3f6" data-id="b83a3f6" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:0px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-b62506c elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="b62506c" data-element_type="section"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-102ba43" data-id="102ba43" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-813ad84 elementor-widget elementor-widget-heading" data-id="813ad84" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="roteiro_01-10-2022">'+dados_quarto.tipo_pacote+'</h2> </div> </div>   <div class="elementor-element elementor-element-a61d8e3 elementor-widget elementor-widget-heading" data-id="a61d8e3" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_datas">'+jQuery("#data_form_inicial_"+code+'_'+data_id_div).val()+' </h2> </div> </div>   <div class="elementor-element elementor-element-a61d8e3 elementor-widget elementor-widget-heading" data-id="a61d8e3" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_datas">'+qtd_noites_calculo+' noites</h2> </div> </div> </div> </div> </div> </section> </div> </div> <div class="elementor-column elementor-col-30 elementor-top-column elementor-element elementor-element-490f7fe" data-id="490f7fe" data-element_type="column" style="width: 33%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 4px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-44c2ad5 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="44c2ad5" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-75 elementor-inner-column elementor-element elementor-element-f82213e" data-id="f82213e" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 0px 0px 5px;"> '+(dados_quarto.valor_pacote_single == 0 ? '' : '<div class="elementor-element elementor-element-e26c72b elementor-widget elementor-widget-heading" data-id="e26c72b" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_diarias_valor" id="0_desc_diarias_valor_01-10-2022_196">Single</h2> </div> </div>')+' '+(dados_quarto.valor_pacote_double == 0 ? '' : '<div class="elementor-element elementor-element-e26c72b elementor-widget elementor-widget-heading" data-id="e26c72b" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_diarias_valor" id="0_desc_diarias_valor_01-10-2022_196">Duplo</h2> </div> </div>')+' '+(dados_quarto.valor_pacote_triple == 0 ? '' : '<div class="elementor-element elementor-element-e26c72b elementor-widget elementor-widget-heading" data-id="e26c72b" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_diarias_valor" id="0_desc_diarias_valor_01-10-2022_196">Triplo</h2> </div> </div>')+' '+(dados_quarto.taxas == 0 ? '' : '<div class="elementor-element elementor-element-849a035 elementor-widget elementor-widget-heading" data-id="849a035" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default">Tx e impostos</h2> </div> </div>')+' </div> </div> <div class="elementor-column elementor-col-50 elementor-inner-column elementor-element elementor-element-6252797" data-id="6252797" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 6px 10px 0px;"> <div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default"> '+(dados_quarto.valor_pacote_single == 0 ? '' : '<div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_single+'</h2> </div> </div>')+' '+(dados_quarto.valor_pacote_double == 0 ? '' : '<div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_double+'</h2> </div> </div>')+'  '+(dados_quarto.valor_pacote_triple == 0 ? '' : '<div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_triple+'</h2> </div> </div>')+'  '+(dados_quarto.taxas == "" ? '' : '<div class="elementor-element elementor-element-ced2e60 elementor-widget elementor-widget-heading" data-id="ced2e60" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default valor_total" id="0_taxas_01-10-2022_196">'+dados_quarto.moeda+' '+dados_quarto.taxas+'</h2> </div> </div>')+'  </div> </div> </div> </section> </div> </div> </div> </section>'; 
-
-      }
+		    
+        retorno += '<section class="elementor-section elementor-top-section elementor-element elementor-element-739dedd elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="739dedd" data-element_type="section" style="border: 1px solid #ddd;border-radius: 4px;padding: 10px;"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-20 elementor-top-column elementor-element elementor-element-a56b981" data-id="a56b981" data-element_type="column" style="width: 25%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:10px 4px;"> <div class="elementor-element elementor-element-fda57c5 elementor-widget elementor-widget-image" data-id="fda57c5" data-element_type="widget" data-widget_type="image.default" style="height:100%"> <div class="elementor-widget-container" style="height:100%"> <image width="800" height="533" src="'+(dados_quarto.foto_hotel == "" || dados_quarto.foto_hotel == 0 ? 'https://www.freeiconspng.com/uploads/no-image-icon-4.png' : dados_quarto.foto_hotel)+'" style="height:150px;border-radius:4px"></div> </div> </div> </div>   <div class="elementor-column elementor-col-'+(dados_quarto.foto_hotel == 0 ? '30' : '20')+' elementor-top-column elementor-element elementor-element-94b74d9" data-id="94b74d9" data-element_type="column" style="width:45%"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:0px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-ed40d30 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="ed40d30" data-element_type="section"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-8eb33fe" data-id="8eb33fe" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-6ec8aad elementor-widget elementor-widget-heading" data-id="6ec8aad" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" style="font-size: 17px;font-weight: 700;color: var(--e-global-color-primary);">'+(dados_quarto.categoria_apto != null ? dados_quarto.categoria_apto : '')+' <br> <small style="font-size:12px;font-weight:500">'+localizacao+'</small></h2> </div> </div> <div class="elementor-element elementor-element-64b43e0 elementor-widget elementor-widget-heading" data-id="64b43e0" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container" style="border-left: 1px solid #a1a1a1;padding: 4px 16px;font-family:\'Montserrat\'"> <h2 class="elementor-heading-title elementor-size-default" style="margin-bottom:6px !important"><strong>'+(dados_quarto.nome_hotel.replace("%ap", "'"))+'</strong></h2> <small>'+(dados_quarto.regime_apto != null ? dados_quarto.regime_apto : '')+'</small> </div> </div> <div class="elementor-element elementor-element-63c9731 elementor-widget elementor-widget-heading" data-id="63c9731" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"></h2> </div> </div>  </div> </div> </div> </section> </div> </div>  <div class="elementor-column elementor-col-30 elementor-top-column elementor-element elementor-element-490f7fe" data-id="490f7fe" data-element_type="column" style="width: 30%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 4px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-44c2ad5 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="44c2ad5" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}" style="background-color:#fff !important"> <div class="elementor-container elementor-column-gap-default">  <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-6252797" data-id="6252797" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 6px 10px 0px;"> <div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default" style="margin-bottom: 5px !important;"><p style="margin-bottom: 8px;font-size: 11px;font-family: \'Montserrat\';font-weight: 500;">'+qtd_noites_calculo+' noites, '+jQuery("#field_adt_"+code+"_"+data_id_div).val()+' '+(jQuery("#field_adt_"+code+"_"+data_id_div).val() > 1 ? 'adultos' : 'adulto')+' '+(jQuery("#field_chd_"+code+"_"+data_id_div).val() > 0 ? (jQuery("#field_chd_"+code+"_"+data_id_div).val()+' '+(jQuery("#field_chd_"+code+"_"+data_id_div).val() > 1 ? 'crianças' : 'criança')) : '')+'</p> '+(dados_quarto.valor_pacote_single == 0 ? '' : '<div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196" style="font-size:22px">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_single+'</h2> </div> </div>')+' '+(dados_quarto.valor_pacote_double == 0 ? '' : '<div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default" style="margin-bottom: 5px !important;"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196" style="font-size:22px">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_double+'</h2> </div> </div>')+'  '+(dados_quarto.valor_pacote_triple == 0 ? '' : '<div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default" style="margin-bottom: 5px !important;"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196" style="font-size:22px">'+dados_quarto.moeda+' '+dados_quarto.valor_pacote_triple+'</h2> </div> </div>')+' <p style="margin-bottom: 8px;font-size: 11px;font-family: \'Montserrat\';font-weight: 500;">Impostos já incluídos</p>  '+(dados_quarto.taxas == "" ? '' : '<div class="elementor-element elementor-element-ced2e60 elementor-widget elementor-widget-heading" data-id="ced2e60" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default valor_total" id="0_taxas_01-10-2022_196">'+dados_quarto.moeda+' '+dados_quarto.taxas+'</h2> </div> </div>');
+			  if(dados_quarto.valor_pacote_single == 0 && dados_quarto.valor_pacote_double == 0){
+				  var priceCheck = dados_quarto.valor_pacote_triple;
+			  }else if(dados_quarto.valor_pacote_single == 0 && dados_quarto.valor_pacote_triple == 0){
+				  var priceCheck = dados_quarto.valor_pacote_double;
+			  }else if(dados_quarto.valor_pacote_double == 0 && dados_quarto.valor_pacote_triple == 0){
+				  var priceCheck = dados_quarto.valor_pacote_single;
+			  }
+				if(dados_quarto.tipo_periodo == 1){
+			  retorno += '<button class="btn btn-primary check_set_'+data_id_div+'_'+code+'" id="check_set_'+data_id_div+'_'+code+'" name="check_set_'+data_id_div+'_'+code+'" onclick="send_reserva(\''+dados_quarto.nome_hotel+'\', \''+dados_quarto.categoria_apto+'\', \''+dados_quarto.tipo_pacote+'\', \''+jQuery("#data_form_inicial_"+code+'_'+data_id_div).val()+'\', \''+qtd_noites_calculo+'\', \''+dados_quarto.valor_pacote_single+'\', \''+priceCheck+'\', \''+dados_quarto.valor_pacote_triple+'\', \''+dados_quarto.nome_roteiro+'\', \''+dados_quarto.regime_apto+'\', \''+dados_quarto.tipo_periodo+'\', \''+jQuery("#field_adt_"+code+"_"+data_id_div).val()+'\', \''+jQuery("#field_chd_"+code+"_"+data_id_div).val()+'\', \''+dados_quarto.data_final+'\')">Reservar</button>';
+		  }else{
+		  	retorno += '<button class="btn btn-primary check_set_'+data_id_div+'_'+code+'" id="check_set_'+data_id_div+'_'+code+'" name="check_set_'+data_id_div+'_'+code+'" onclick="change_set_value(\''+dados_quarto.nome_hotel+'\', \''+dados_quarto.categoria_apto+'\', \''+dados_quarto.tipo_pacote+'\', \''+jQuery("#data_form_inicial_"+code+'_'+data_id_div).val()+'\', \''+qtd_noites_calculo+'\', \''+dados_quarto.valor_pacote_single+'\', \''+priceCheck+'\', \''+dados_quarto.valor_pacote_triple+'\', \''+dados_quarto.nome_roteiro+'\', \''+dados_quarto.regime_apto+'\', \''+dados_quarto.tipo_periodo+'\', \''+jQuery("#field_adt_"+code+"_"+data_id_div).val()+'\', \''+jQuery("#field_chd_"+code+"_"+data_id_div).val()+'\', \''+dados_quarto.data_final+'\')">Solicitar cotação</button>';
+		  } 
+		  retorno += '</div> </div> </div> </section> </div> </div> </div> </section>'; 
 
       retorno += '<hr>';
+
+      }
 
       jQuery(".div_interno_tarifario_data_"+data_id_div+"_"+code).html(retorno);
       jQuery(".div_tarifario_data_"+data_id_div+"_"+code).attr("style", "");
 
       goToByScroll('scroll', data_id_div, code);
     }
+	 
+  }
      
 
   }else{ 
@@ -745,19 +803,22 @@ function show_div_count_atualizar(data_id_div, code){
 	data_fim = data_fim[2]+"-"+data_fim[1]+"-"+data_fim[0];
 
 	var agora = moment(data_inicio); // Data de hoje
+	  console.log('agora '+agora);
 	var antes = moment(data_fim); // Outra data no passado
+	  console.log('antes '+antes);
 	var duracao = moment.duration(agora.diff(antes));
+	  console.log('duracao '+duracao);
 
 	// Mostra a diferença em dias
 	var dias = duracao.asDays();
 	var noitesSSS = parseInt(dias); 
 
-    var qtd_noites_calculo = parseInt(jQuery(".noites_pacote"+code).val()); 
+    var qtd_noites_calculo = noitesSSS; 
+	  console.log('noites '+noitesSSS);
 
       var json_quartos = JSON.parse(jQuery("#tarifa_quartos_diaria_"+data_id_div+"_"+code).val());  
  
-    if(4 > 4){
-      console.log('condição 1');
+    if(4 > 4){ 
       var myhtml = document.createElement("div");
       myhtml.innerHTML = "Você pode selecionar uma data diferente do que a do período cadastrado, mas precisamos confirmar que as datas selecionadas estão disponíveis. <br><br> Deseja enviar uma cotação personalizada?";  
 
@@ -784,14 +845,12 @@ function show_div_count_atualizar(data_id_div, code){
                 window.location = '/cotacao';
               } 
           });
-    }else if (contador_tarifas == 0) {
-      console.log('condição 2');
+    }else if (contador_tarifas == 0) { 
       swal({
               title: "Nenhuma tarifa encontrada para o período selecionado.",
               icon: "warning",
           }); 
-      }else if (contador_periodos_intercalados > 0) {
-      console.log('condição 3');
+      }else if (contador_periodos_intercalados > 0) { 
         var myhtml = document.createElement("div");
       myhtml.innerHTML = "<strong>PERÍODOS ENCONTRADOS:</strong><br>"+periodos_encontrados;  
 
@@ -818,8 +877,7 @@ function show_div_count_atualizar(data_id_div, code){
                 window.location = '/cotacao';
               } 
           });
-    }else if ((moment(jQuery("#data_form_inicial_"+code+"_"+data_id_div).val(), "DD/MM/YYYY") < moment(loop_data_checkin[0], "DD/MM/YYYY")) || (moment(jQuery("#data_form_"+code+"_"+data_id_div).val(), "DD/MM/YYYY") > moment(loop_data_checkout[0], "DD/MM/YYYY"))) {
-      console.log('condição 4');
+    }else if ((moment(jQuery("#data_form_inicial_"+code+"_"+data_id_div).val(), "DD/MM/YYYY") < moment(loop_data_checkin[0], "DD/MM/YYYY")) || (moment(jQuery("#data_form_"+code+"_"+data_id_div).val(), "DD/MM/YYYY") > moment(loop_data_checkout[0], "DD/MM/YYYY"))) { 
       var myhtml = document.createElement("div");
       myhtml.innerHTML = "Você pode selecionar uma data diferente do que a do período cadastrado, mas precisamos confirmar que as datas selecionadas estão disponíveis. <br><br> Deseja enviar uma cotação personalizada?";  
 
@@ -851,8 +909,7 @@ function show_div_count_atualizar(data_id_div, code){
                 window.location = '/cotacao';
               } 
           });
-    }else{
-      console.log('condição 6');
+    }else{ 
 
       for (var i = 0; i < 21; i++) {
           jQuery(".div_bloco_hotelaria_"+code+"_"+i).attr("style", "display:none");
@@ -946,11 +1003,8 @@ function show_div_count_atualizar(data_id_div, code){
             if (dados_quarto.localizacao_hotel != null) {
               localizacao = '<h2 class="elementor-heading-title elementor-size-default" style="margin-top: 6px;font-size:13px;"> '+dados_quarto.localizacao_hotel+'</h2>';
             } 
-			  
-			  console.log('dados_quarto.lotado', dados_quarto.lotado);
-			  console.log('dados_quarto.consulta', dados_quarto.consulta);
-				var bloqueio = parseInt(tarifa_atualizar_valor[i].bloqueio);
-				console.log('bloqueio', bloqueio);
+			   
+				var bloqueio = parseInt(tarifa_atualizar_valor[i].bloqueio); 
 
             if(dados_quarto.taxas != "" || dados_quarto.taxas != 0){
               var valor_taxas = parseInt(soma_dias)*(parseInt(dados_quarto.taxas)/100);
@@ -959,8 +1013,7 @@ function show_div_count_atualizar(data_id_div, code){
               var valor_taxas = 0;
               var valor_total = soma_dias;
             }
-			  
-			  console.log(dados_quarto);
+			   
 
             retorno += '<section class="elementor-section elementor-top-section elementor-element elementor-element-739dedd elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="739dedd" data-element_type="section" style="margin-bottom"> <div class="elementor-container elementor-column-gap-default">   <div class="elementor-column elementor-col-20 elementor-top-column elementor-element elementor-element-a56b981" data-id="a56b981" data-element_type="column" style="width: 17%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:10px 4px;"> <div class="elementor-element elementor-element-fda57c5 elementor-widget elementor-widget-image" data-id="fda57c5" data-element_type="widget" data-widget_type="image.default"> <div class="elementor-widget-container"> <div class="foto_hotel" style="background-image: url('+dados_quarto.foto_hotel+');background-color: #fff;height: 150px;background-position: center;background-repeat: no-repeat;background-size: contain;"></div> <small style="font-size: 10px;font-weight: 700;">'+(dados_quarto.distancia == null || dados_quarto.distancia == "" || dados_quarto.distancia == "null" ? "" : dados_quarto.distancia)+'</small></div> </div> </div> </div> <div class="elementor-column elementor-col-20 elementor-top-column elementor-element elementor-element-94b74d9" data-id="94b74d9" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:0px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-ed40d30 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="ed40d30" data-element_type="section"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-8eb33fe" data-id="8eb33fe" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-64b43e0 elementor-widget elementor-widget-heading" data-id="64b43e0" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"><strong>'+dados_quarto.nome_hotel+'</strong></h2>'+localizacao+'  </div> </div> <div class="elementor-element elementor-element-63c9731 elementor-widget elementor-widget-heading" data-id="63c9731" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"><strong>'+dados_quarto.regime_apto+'</strong></h2> </div> </div> <div class="elementor-element elementor-element-6ec8aad elementor-widget elementor-widget-heading" data-id="6ec8aad" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default">'+dados_quarto.categoria_apto+'</h2> </div> </div> </div> </div> </div> </section> </div> </div> <div class="elementor-column elementor-col-30 elementor-top-column elementor-element elementor-element-b83a3f6" data-id="b83a3f6" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated" style="padding:0px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-b62506c elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="b62506c" data-element_type="section"> <div class="elementor-container elementor-column-gap-default"> <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-102ba43" data-id="102ba43" data-element_type="column"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-813ad84 elementor-widget elementor-widget-heading" data-id="813ad84" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="roteiro_01-10-2022">'+jQuery("#field_adt_"+code+"_"+data_id_div).val()+' '+(jQuery("#field_adt_"+code+"_"+data_id_div).val() > 1 ? 'adultos' : 'adulto')+'</h2> </div> </div>   <div class="elementor-element elementor-element-a61d8e3 elementor-widget elementor-widget-heading" data-id="a61d8e3" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_datas">'+jQuery("#data_form_inicial_"+code+'_'+data_id_div).val()+' a '+jQuery("#data_form_"+code+'_'+data_id_div).val()+' </h2> </div> </div>   <div class="elementor-element elementor-element-a61d8e3 elementor-widget elementor-widget-heading" data-id="a61d8e3" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_datas">'+noitesSSS+' '+(noitesSSS > 1 ? 'noites' : 'noite')+'</h2> </div> </div> </div> </div> </div> </section> </div> </div> <div class="elementor-column elementor-col-30 elementor-top-column elementor-element elementor-element-490f7fe" data-id="490f7fe" data-element_type="column" style="width: 33%;"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 4px;"> <section class="elementor-section elementor-inner-section elementor-element elementor-element-44c2ad5 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="44c2ad5" data-element_type="section" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}"> <div class="elementor-container elementor-column-gap-default">    <div class="elementor-column elementor-col-100 elementor-inner-column elementor-element elementor-element-f822133434e" data-id="f822133434e" data-element_type="column" style="'+(dados_quarto.lotado == 0 || dados_quarto.lotado == null ? "display:none" : '')+'"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-e26c72b elementor-widget elementor-widget-heading" data-id="e26c72b" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" style="text-align: center;padding: 40px 0px;font-size: 42px;font-weight: 700;color: #ff000052;letter-spacing: 5px;"><strong>LOTADO</strong></h2> </div> </div></div> </div>     <div class="elementor-column elementor-col-85 elementor-inner-column elementor-element elementor-element-f82213e" data-id="f82213e" data-element_type="column" style="'+(dados_quarto.lotado == 1 ? "display:none" : '')+'"> <div class="elementor-widget-wrap elementor-element-populated"> <div class="elementor-element elementor-element-e26c72b elementor-widget elementor-widget-heading" data-id="e26c72b" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default desc_diarias_valor" id="0_desc_diarias_valor_01-10-2022_196" style="    font-size: 13px;">'+noitesSSS+' '+(noitesSSS > 1 ? 'noites' : 'noite')+'</h2> </div> </div> <div class="elementor-element elementor-element-849a035 elementor-widget elementor-widget-heading" data-id="849a035" data-element_type="widget" data-widget_type="heading.default" style="height:30px;margin-bottom: 0 !important;"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" style="    font-size: 13px;">Tx e impostos ('+(dados_quarto.taxas == 0 || dados_quarto.taxas == "" ? "0" : dados_quarto.taxas)+'%)</h2> </div> </div>  <div class="elementor-element elementor-element-849a035 elementor-widget elementor-widget-heading" data-id="849a035" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default"><strong>TOTAL</strong></h2> </div> </div></div> </div> <div class="elementor-column elementor-col-80 elementor-inner-column elementor-element elementor-element-6252797" data-id="6252797" data-element_type="column"  style="'+(dados_quarto.lotado == 1 ? "display:none" : '')+'"> <div class="elementor-widget-wrap elementor-element-populated" style="padding: 10px 6px 10px 0px;"> <div class="elementor-element elementor-element-192b0e4 elementor-widget elementor-widget-heading" data-id="192b0e4" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default" id="0_subtotal01-10-2022_196"> '+parseFloat(soma_dias).toLocaleString("pt-BR", { style: "currency" , currency:"BRL"})+'</h2> </div> </div> <div class="elementor-element elementor-element-ced2e60 elementor-widget elementor-widget-heading" data-id="ced2e60" data-element_type="widget" data-widget_type="heading.default" style="height:30px;'+(dados_quarto.consulta == 1 ? 'margin-bottom: 0 !important;visibility:hidden' : 'margin-bottom: 0 !important;')+'"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default valor_total" id="0_taxas_01-10-2022_196"> '+(valor_taxas == 0 ? '' : parseFloat(valor_taxas).toLocaleString("pt-BR", { style: "currency" , currency:"BRL"}))+'</h2> </div> </div> <div class="elementor-element elementor-element-ced2e60 elementor-widget elementor-widget-heading" data-id="ced2e60" data-element_type="widget" data-widget_type="heading.default"> <div class="elementor-widget-container"> <h2 class="elementor-heading-title elementor-size-default valor_total" id="0_taxas_01-10-2022_196"><strong> '+(dados_quarto.consulta == 1 ? 'Sob Consulta' : parseFloat(valor_total).toLocaleString("pt-BR", { style: "currency" , currency:"BRL"}))+'</strong></h2> <button style="font-weight: 600;font-size: 8px;padding: 5px;border-radius: 4px;background-color: green;border: 1px solid green;color: #fff;margin-top:10px;text-transform: uppercase;'+(dados_quarto.consulta == 1 ? 'visibility:hidden;' : '')+'" onclick="value_per_night(\''+dados_quarto.iss+'\', \''+dados_quarto.taxas_hotel+'\', \''+dados_quarto.taxas_opcional_hotel+'\', \''+parseFloat(valor_total).toLocaleString("pt-BR", { style: "currency" , currency:"BRL"})+'\', \''+soma_dias+'\', \''+i+'\')">Ver detalhe</button></div> </div>  </div> </div> </div> </section> </div> </div> </div> </section>  '; 
 
@@ -1135,8 +1188,7 @@ function get_payment_method(forma, methodo, id){
   var nome_hotel = jQuery("#nome_hotel").val(); 
   var nome_apto = jQuery("#categoria_apto").val(); 
   var pacote = jQuery("#tipo_pacote").val(); 
-  var datas_periodo = jQuery("#datas_periodo").val(); 
-  console.log(datas_periodo);
+  var datas_periodo = jQuery("#datas_periodo").val();  
   var noites = jQuery("#noites_pacote").val();  
   var taxas = jQuery("#valor_taxas_total").val();
   /*
@@ -1196,7 +1248,7 @@ function get_payment_method(forma, methodo, id){
             var id = data.slice(0,-1); 
             jQuery.ajax({
                 type: "POST",
-                url: "/wp-content/plugins/tarifario-tec/includes/ajax-periodo.php",
+                url: jQuery("#urlAjax").val()+"ajax-periodo.php",
                 data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_roteiro:nome_roteiro, pacote:pacote, datas_periodo:datas_periodo, noites:noites, valores_diarias:valores_diarias, nome_roteiro:nome_roteiro, regime:regime, periodo:periodo, description:description, methodo:methodo, qtd_adt:qtd_adt, qtd_chd:qtd_chd, forma:forma}, 
                 success: function(result){ 
                     jQuery.get('/?add-to-cart=' + id +'&quantity=1', function(response) { 
@@ -1263,7 +1315,7 @@ function change_value_order(forma){
 
   jQuery.ajax({
         type: "POST",
-        url: "/wp-content/plugins/tarifario-tec/includes/ajax-forma-pagamento.php",
+        url: jQuery("#urlAjax").val()+"ajax-forma-pagamento.php",
         data: {forma:forma, valores_diarias:valores_diarias, noites:noites}, 
         success: function(result){ 
             jQuery.ajax({
@@ -1319,41 +1371,48 @@ function change_set_diarias(x, data, code, nome_hotel, nome_apto, pacote, data, 
   jQuery("#tipo_periodo").val(periodo); 
 } 
 
-function send_reserva(x, code){
-  var nome_hotel = jQuery("#nome_hotel").val(); 
-  var nome_apto = jQuery("#categoria_apto").val(); 
-  var pacote = jQuery("#tipo_pacote").val(); 
-  var data = jQuery("#datas").val(); 
-  var noites = jQuery("#noites_pacote").val(); 
-  var valores_diarias = jQuery("#valor_soma_dias_select").val();
-  var nome_roteiro = jQuery("#nome_roteiro").val(); 
-  var regime = jQuery("#regime_apto").val(); 
-  var periodo = jQuery("#tipo_periodo").val(); 
-  var description = jQuery("#description").val(); 
+function send_reserva(nome_hotel, nome_apto, pacote, data_roteiro, noites, single, valores_diarias, triplo, nome_roteiro, regime, periodo, qtd_adt, qtd_chd, data_final){ 
 
+	var total = parseInt(valores_diarias);
+	if(total == 0){
+		if(parseInt(single) == 0){
+			total = parseInt(triplo);
+		}
+		if(parseInt(triplo) == 0){
+			total = parseInt(single);
+		}
+	}
+	
+	jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).html('<img src="https://media.tenor.com/images/a742721ea2075bc3956a2ff62c9bfeef/tenor.gif" style="height: 22px;margin-right: 0;padding: 0px 10px;">');
+  jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).attr("disabled", "disabled");
+  jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).prop("disabled");
+	
+	console.log(total);
+	data_roteiro = data_roteiro+' a '+data_final;
   swal({
         title: "Aguarde!",
         text: "Estamos processando a sua solicitação. Você será redirecionado ao checkout para continuar.",
         icon: "success",
     });
 
-    localStorage.setItem("TIPO_TARIFARIO", periodo);
-
-    jQuery(".0_button_send_orcamento_"+x).html('<img src="https://media.tenor.com/images/a742721ea2075bc3956a2ff62c9bfeef/tenor.gif" style="height: 22px;margin-right: 0;padding: 0px 10px;">');
+    localStorage.setItem("TIPO_TARIFARIO", periodo);  
+	
+	var roteiro_page_title = jQuery("#roteiro_buy").val();
+    localStorage.setItem("ROTEIRO_PAGE_TITLE", roteiro_page_title);
 
   jQuery.ajax({
         type: "POST",
         url: wp_ajax.ajaxurl,
-        data: { action: "send_data_roteiros", nome_roteiro:nome_roteiro, nome_hotel: nome_hotel, nome_apto: nome_apto, valores_diarias:valores_diarias, periodo:periodo },
+        data: { action: "send_data_roteiros", nome_roteiro:jQuery("#roteiro_buy").val(), nome_hotel: nome_hotel, nome_apto: nome_apto, valores_diarias:total, periodo:periodo },
         success: function( data ) {
             var id = data.slice(0,-1); 
             jQuery.ajax({
                 type: "POST",
-                url: "/wp-content/plugins/tarifario-tec/includes/ajax-periodo.php",
-                data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_roteiro:nome_roteiro, pacote:pacote, data:data, noites:noites, valores_diarias:valores_diarias, nome_roteiro:nome_roteiro, regime:regime, periodo:periodo, description:description}, 
+                url: jQuery("#urlAjax").val()+"ajax-periodo.php",
+                data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_roteiro:nome_roteiro, pacote:pacote, data_roteiro:data_roteiro, noites:noites, single:single, valores_diarias:total, triplo:triplo, nome_roteiro:nome_roteiro, regime:regime, periodo:periodo, qtd_adt:qtd_adt, qtd_chd:qtd_chd, nome_roteiro:jQuery("#roteiro_buy").val(), roteiro_page_title:roteiro_page_title}, 
                 success: function(result){ 
                     jQuery.get('/?add-to-cart=' + id +'&quantity=1', function(response) { 
-                        window.location.href = '/checkout-page';
+                        window.location.href = '/finalizar-compra';
                     });
                 }
 
@@ -1362,11 +1421,13 @@ function send_reserva(x, code){
     });
 }
 
-function change_set_value(nome_hotel, nome_apto, pacote, data_roteiro, noites, single, valores_diarias, triplo, nome_roteiro, regime, periodo){
-
+function change_set_value(nome_hotel, nome_apto, pacote, data_roteiro, noites, single, valores_diarias, triplo, nome_roteiro, regime, periodo, qtd_adt, qtd_chd, data_final){ 
+	
+	localStorage.setItem("NOMEROTEIRO", jQuery("#roteiro_buy").val());
   var myhtml = document.createElement("div");
     myhtml.innerHTML = "Deseja solicitar uma cotação para o hotel selecionado?";  
-
+	
+	data_roteiro = data_roteiro+' a '+data_final;
   swal({
         title: "Solicitar cotação",
         content: myhtml, 
@@ -1378,6 +1439,10 @@ function change_set_value(nome_hotel, nome_apto, pacote, data_roteiro, noites, s
       }, 
     }).then(function(isConfirm) {
         if (isConfirm) {  
+			
+			jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).html('<img src="https://media.tenor.com/images/a742721ea2075bc3956a2ff62c9bfeef/tenor.gif" style="height: 22px;margin-right: 0;padding: 0px 10px;">');
+  jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).attr("disabled", "disabled");
+  jQuery(".check_set_"+jQuery(".data_do_post_"+jQuery(".numero_do_post").val()).val()+"_"+jQuery(".numero_do_post").val()).prop("disabled");
 
           jQuery(".swal-button--confirm").html('<img src="https://media.tenor.com/images/a742721ea2075bc3956a2ff62c9bfeef/tenor.gif" style="height: 22px;margin-right: 0;padding: 0px 10px;">');
 
@@ -1390,16 +1455,17 @@ function change_set_value(nome_hotel, nome_apto, pacote, data_roteiro, noites, s
       jQuery.ajax({
             type: "POST",
             url: wp_ajax.ajaxurl,
-            data: { action: "send_data_roteiros", nome_roteiro:nome_roteiro, nome_hotel: nome_hotel, nome_apto: nome_apto, valores_diarias:valores_diarias, periodo:periodo },
+            data: { action: "send_data_roteiros", nome_roteiro:jQuery("#roteiro_buy").val(), nome_hotel: nome_hotel, nome_apto: nome_apto, valores_diarias:valores_diarias, periodo:periodo },
             success: function( data ) {
-                var id = data.slice(0,-1); 
+                var id = data.slice(0,-1);  
                 jQuery.ajax({
                     type: "POST",
-                    url: "/wp-content/plugins/tarifario-tec/includes/ajax-periodo.php",
-                    data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_roteiro:nome_roteiro, pacote:pacote, data_roteiro:data_roteiro, noites:noites, single:single, valores_diarias:valores_diarias, triplo:triplo, nome_roteiro:nome_roteiro, regime:regime, periodo:periodo}, 
+                    url: jQuery("#urlAjax").val()+"ajax-periodo.php",
+                    data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_roteiro:nome_roteiro, pacote:pacote, data_roteiro:data_roteiro, noites:noites, single:single, valores_diarias:valores_diarias, triplo:triplo, nome_roteiro:nome_roteiro, regime:regime, periodo:periodo, qtd_adt:qtd_adt, qtd_chd:qtd_chd, nome_roteiro:jQuery("#roteiro_buy").val()}, 
                     success: function(result){ 
+						console.log(result.slice(0,-1));
                         jQuery.get('/?add-to-cart=' + id +'&quantity=1', function(response) { 
-                            window.location.href = '/checkout-page';
+                            window.location.href = '/finalizar-compra';
                         });
                     }
 
@@ -1517,7 +1583,7 @@ function send_orcamento(id, data, code){
             var id = data.slice(0,-1); 
             jQuery.ajax({
                 type: "POST",
-                url: "/wp-content/plugins/tarifario-tec/includes/ajax-periodo.php",
+                url: jQuery("#urlAjax").val()+"ajax-periodo.php",
                 data: {nome_hotel:nome_hotel, nome_apto:nome_apto, nome_regime:nome_regime, nome_pacote:nome_pacote, nome_descritivo:nome_descritivo, nome_datas:nome_datas, nome_diarias:nome_diarias, tipo_tarifario:tipo_tarifario, total_noites_adt:total_noites_adt, valor_total_noites_adt:valor_total_noites_adt, total_noites_chd:total_noites_chd, valor_total_noites_chd:valor_total_noites_chd, total_noites_extras_adt:total_noites_extras_adt, valor_total_noites_extras_adt:valor_total_noites_extras_adt, total_noites_extras_chd:total_noites_extras_chd, valor_total_noites_extras_chd:valor_total_noites_extras_chd, taxas:taxas, valor_total:valor_total, total_chd:total_chd, qtd_adt: qtd_adt, qtd_chd: qtd_chd}, 
                 success: function(result){ 
                     jQuery.get('/?add-to-cart=' + id +'&quantity=1', function(response) { 
@@ -1546,6 +1612,10 @@ function check_value_adt(code, data){
 function check_value_chd(code, data){
   var adt = jQuery("#field_adt_"+code+"_"+data).val();
   var chd = jQuery("#field_chd_"+code+"_"+data).val();
+	console.log(chd);
+	if (chd > 1) {
+    jQuery("#field_chd_"+code+"_"+data).val(1);
+  }
   if (adt > 1) { 
     jQuery("#field_idade_"+code+"_"+data).removeAttr("disabled");
     if (chd == 0) {
@@ -1659,7 +1729,7 @@ function set_cotacao_aereo(){
             var id = data.slice(0,-1); 
             jQuery.ajax({
                 type: "POST",
-                url: "/wp-content/plugins/tarifario-tec/includes/ajax-periodo-aereo.php",
+                url: jQuery("#urlAjax").val()+"ajax-periodo-aereo.php",
                 data: {local: jQuery("#field_Origem").val()+' a '+jQuery("#field_Destino").val(), tipo: jQuery("#field_tipo").val(), data1: jQuery("#field_DataDesembarque").val(), data2: jQuery("#field_DataEmbarque").val(), pax: jQuery("#field_pessoas").val(), classe: jQuery("#field_Classe").val(), tipo_tarifario:tipo_tarifario}, 
                 success: function(result){ 
                     jQuery.get('/?add-to-cart=' + id +'&quantity=1', function(response) { 
@@ -1859,7 +1929,7 @@ function send_data_news(){
   }
 
 }
-function see_tarifas_inicial(code, data){   
+function see_tarifas_inicial(code, data){  
 
   var date = new Date();
   var currentMonth = date.getMonth();
@@ -2257,7 +2327,8 @@ function see_tarifas_inicial(code, data){
       jQuery(this).val('');
   });
 }
-function see_tarifas(code, data){  
+function see_tarifas(code, data){   
+	console.log(data);
   jQuery("."+code+"_bloco_tarifas").slideToggle(550);
   jQuery("."+code+"_bloco_tarifas_tarifario").attr("style", "display:none");
 
@@ -2267,138 +2338,7 @@ function see_tarifas(code, data){
   var currentYear = date.getFullYear();
   var add_days = parseInt(jQuery(".noites_pacote"+code.replace("/", "-").replace("/", "-")).val())+1;
 
-  jQuery('#field_checkout_'+code).daterangepicker({ 
-
-    singleDatePicker: true,
-    showDropdowns: true,
-    autoApply: true,
-    startDate: jQuery("#data_form_"+code.replace("/", "-").replace("/", "-")).val(),   
-    minDate: jQuery("#data_form_"+code.replace("/", "-").replace("/", "-")).val(),  
-          locale: {
-              format: 'DD/MM/YYYY',
-      "applyLabel": "Aplicar",
-      "cancelLabel": "Cancelar",
-      "fromLabel": "De",
-      "toLabel": "Até",
-      "customRangeLabel": "Custom",
-      "daysOfWeek": [
-          "Dom",
-          "Seg",
-          "Ter",
-          "Qua",
-          "Qui",
-          "Sex",
-          "Sáb"
-      ],
-      "monthNames": [
-          "Janeiro",
-          "Fevereiro",
-          "Março",
-          "Abril",
-          "Maio",
-          "Junho",
-          "Julho",
-          "Agosto",
-          "Setembro",
-          "Outubro",
-          "Novembro",
-          "Dezembro"
-      ],
-          }
-  }, function(start, end, label) {
-    jQuery("#data_form_"+code).val(start.format('DD/MM/YYYY')); 
-  });
-  jQuery('#field_checkin_'+code).daterangepicker({ 
-
-    singleDatePicker: true,
-    showDropdowns: true,
-    autoApply: true,
-    startDate: jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(),  
-    endDate: moment(jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(), "DD-MM-YYYY").add(add_days, 'days'),  
-    minDate: jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(),  
-          locale: {
-              format: 'DD/MM/YYYY',
-      "applyLabel": "Aplicar",
-      "cancelLabel": "Cancelar",
-      "fromLabel": "De",
-      "toLabel": "Até",
-      "customRangeLabel": "Custom",
-      "daysOfWeek": [
-          "Dom",
-          "Seg",
-          "Ter",
-          "Qua",
-          "Qui",
-          "Sex",
-          "Sáb"
-      ],
-      "monthNames": [
-          "Janeiro",
-          "Fevereiro",
-          "Março",
-          "Abril",
-          "Maio",
-          "Junho",
-          "Julho",
-          "Agosto",
-          "Setembro",
-          "Outubro",
-          "Novembro",
-          "Dezembro"
-      ],
-          }
-  }, function(start, end, label) {
-    jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(start.format('DD/MM/YYYY')); 
-
-    jQuery('#field_checkout_'+code).daterangepicker({ 
-
-    singleDatePicker: true,
-    showDropdowns: true,
-    autoApply: true,
-    startDate: jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(),   
-    minDate: jQuery("#data_form_inicial_"+code.replace("/", "-").replace("/", "-")).val(),  
-          locale: {
-              format: 'DD/MM/YYYY',
-      "applyLabel": "Aplicar",
-      "cancelLabel": "Cancelar",
-      "fromLabel": "De",
-      "toLabel": "Até",
-      "customRangeLabel": "Custom",
-      "daysOfWeek": [
-          "Dom",
-          "Seg",
-          "Ter",
-          "Qua",
-          "Qui",
-          "Sex",
-          "Sáb"
-      ],
-      "monthNames": [
-          "Janeiro",
-          "Fevereiro",
-          "Março",
-          "Abril",
-          "Maio",
-          "Junho",
-          "Julho",
-          "Agosto",
-          "Setembro",
-          "Outubro",
-          "Novembro",
-          "Dezembro"
-      ],
-          }
-  }, function(start, end, label) {
-    jQuery("#data_form_"+code).val(start.format('DD/MM/YYYY')); 
-  });
-  }); 
-
   
- 
-
-  jQuery('#field_checkin_'+data).on('cancel.daterangepicker', function(ev, picker) {
-      jQuery(this).val('');
-  });
 }
 
 function set_value_nacionais(){
@@ -2482,6 +2422,52 @@ function see_tarifa_periodo(code, data){
         jQuery(".search_tarifas_"+i).attr("style", "display:none");
     }
   jQuery(".form_tarifario_"+code+"_"+data).toggle(500);
+	
+	jQuery('#field_checkin_'+code+'_'+data).daterangepicker({ 
+
+    singleDatePicker: true,
+    showDropdowns: true,
+    autoApply: true,
+    startDate: data,   
+    minDate: data,  
+          locale: {
+              format: 'DD/MM/YYYY',
+      "applyLabel": "Aplicar",
+      "cancelLabel": "Cancelar",
+      "fromLabel": "De",
+      "toLabel": "Até",
+      "customRangeLabel": "Custom",
+      "daysOfWeek": [
+          "Dom",
+          "Seg",
+          "Ter",
+          "Qua",
+          "Qui",
+          "Sex",
+          "Sáb"
+      ],
+      "monthNames": [
+          "Janeiro",
+          "Fevereiro",
+          "Março",
+          "Abril",
+          "Maio",
+          "Junho",
+          "Julho",
+          "Agosto",
+          "Setembro",
+          "Outubro",
+          "Novembro",
+          "Dezembro"
+      ],
+          }
+  }, function(start, end, label) {
+    jQuery("#data_form_"+code+"_"+data).val(start.format('DD/MM/YYYY')); 
+  });  
+ 
+  jQuery('#field_checkin_'+code+'_'+data).on('cancel.daterangepicker', function(ev, picker) {
+      jQuery(this).val('');
+  });
 }
 
 function show_dados_cotacao(){ 

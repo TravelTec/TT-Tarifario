@@ -1995,7 +1995,7 @@
                             <div class="elementor-widget-wrap elementor-element-populated" style="background-color: #f9f9f9;">
                                 <div class="elementor-element elementor-element-8d6b5de elementor-widget elementor-widget-heading" data-id="8d6b5de" data-element_type="widget" data-widget_type="heading.default">
                                     <div class="elementor-widget-container">
-                                        <h2 class="elementor-heading-title elementor-size-default"><a onclick="see_tarifas(\''.$post_id.'\', \''.str_replace("/", "-", $dados_gerais[0]["data_inicial"]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: #149348;color: #fff;font-size: 14px;padding: 6px 18px;"><p style="margin-bottom: 0;display: flex;">$ <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
+                                        <h2 class="elementor-heading-title elementor-size-default"><a onclick="see_tarifas(\''.$post_id.'\', \''.str_replace("/", "-", $dados_gerais[0]["data_inicial"]).'\')"><button class="elementor-button elementor-size-sm '.$post_id.'_bloco_tarifas_button button_blocos_tarifas" style="float: right;background-color: var(--e-global-color-primary);color: #fff;font-size: 14px;padding: 6px 18px;"><p style="margin-bottom: 0;display: flex;">$ <i class="fa fa-arrow-down" style="margin-left: 7px;"></i></p></button></a></h2>
 
 
                                     </div>
