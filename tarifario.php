@@ -22,7 +22,7 @@ Description: Voucher Tec - Tarifário permite o cadastro de tarifários de hoté
 
 
  
-Version: 2.0.1
+Version: 2.0.2
 
 
 
@@ -112,7 +112,23 @@ function shortcode_puc_tarifario() {
 add_action( 'admin_init', 'shortcode_puc_tarifario' );
 
 
+// Adiciona abas de detalhes ao plugin
+function tarifario_details_tabs($links, $file) {
+    // Verifica se é o plugin desejado
+    if (strpos($file, 'tarifario.php') !== false) {
+        // Adiciona a aba "Documentação" antes do link de desativar
+        $documentation_link = '<span style="font-weight: bold;"><a href="https://traveltec.freshdesk.com/support/solutions/folders/43000585539" target="_blank">Documentação</a></span>';
+        
+        // Encontra a posição do link de desativar
+        $deactivate_position = array_search('deactivate', array_keys($links));
+        
+        // Insere o link de documentação diretamente na posição desejada
+        array_splice($links, $deactivate_position, 0, $documentation_link);
+    }
 
+    return $links;
+}
+add_filter('plugin_action_links', 'tarifario_details_tabs', 10, 2);
 
 
 
