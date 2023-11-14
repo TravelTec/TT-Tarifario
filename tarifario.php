@@ -22,7 +22,7 @@ Description: Voucher Tec - Tarifário permite o cadastro de tarifários de hoté
 
 
  
-Version: 2.0.2
+Version: 2.0.3
 
 
 
